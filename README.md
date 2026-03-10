@@ -1,27 +1,57 @@
-## Project Overview
+## Tổng quan dự án (Project Overview)
 
-This project is a J2EE web application developed using the **Spring Boot framework**.  
-It demonstrates the implementation of a modern Java web system following the **MVC architecture** and integrates several Spring ecosystem technologies.
+Dự án là một ứng dụng web J2EE được phát triển bằng Spring Boot cho phần Backend và React cho phần Frontend.
+Hệ thống được xây dựng theo kiến trúc MVC (Model – View – Controller) ở phía backend và sử dụng RESTful API để giao tiếp với frontend.
 
-### Technologies Used
-- **Spring Boot 4**
-- **Spring Web (Spring MVC)**
-- **Thymeleaf** – server-side template engine
-- **Spring Data JPA (Hibernate)** – ORM for database operations
-- **MySQL** – relational database
-- **Lombok** – reduce boilerplate code
-- **Bean Validation (Hibernate Validator)** – input validation
-- **Spring Boot DevTools** – development support
+Backend chịu trách nhiệm:
+xử lý logic nghiệp vụ
+quản lý dữ liệu
+cung cấp API
 
-### Features
-- RESTful web application structure
-- MVC architecture (Controller – Service – Repository – Entity)
-- CRUD operations with MySQL database
-- Server-side rendering with Thymeleaf
-- Data validation using Hibernate Validator
-- Clean and maintainable project structure using Spring Boot conventions
+Frontend chịu trách nhiệm:
+hiển thị giao diện người dùng
+gửi request đến backend
+xử lý tương tác của người dùng
+
+Ứng dụng sử dụng MySQL làm cơ sở dữ liệu để lưu trữ thông tin người dùng, sản phẩm và đơn hàng.
+
+### Công nghệ sử dụng (Technologies Used)
+
+**Backend**
+-Spring Boot 4
+-Spring Web (Spring MVC)
+-Spring Data JPA (Hibernate) – ORM để thao tác với database
+-MySQL – hệ quản trị cơ sở dữ liệu
+-Lombok – giảm code boilerplate
+-Bean Validation (Hibernate Validator) – kiểm tra dữ liệu đầu vào
+-Spring Boot DevTools – hỗ trợ phát triển
+
+**Frontend**
+-React
+-React Router – quản lý routing
+-Axios / Fetch API – gọi REST API
+-CSS / Bootstrap / Tailwind – thiết kế giao diện
+
+### Kiến trúc hệ thống
+React (Frontend)
+       │
+       │ HTTP Request (REST API)
+       ▼
+Spring Boot (Backend)
+       │
+       ▼
+MySQL Database
+
+**Luồng hoạt động:**
+Người dùng → React UI → gọi API → Spring Boot xử lý → MySQL
+                                     ↓
+                                trả JSON
+                                     ↓
+                               React hiển thị
 
 ### Requirements
 - Java 21
 - Maven
 - MySQL
+- React
+
