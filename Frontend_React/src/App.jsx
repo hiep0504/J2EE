@@ -1,34 +1,21 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+﻿import { BrowserRouter, Navigate, Routes, Route } from 'react-router-dom'
 import './App.css'
+import ProductReview from './View/Product/ProductReview'
+import OrderCreate from './View/Order/OrderCreate'
+import OrderHistory from './View/Order/OrderHistory'
+import OrderDetail from './View/Order/OrderDetail'
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/product/review" element={<ProductReview />} />
+        <Route path="/order/create" element={<OrderCreate />} />
+        <Route path="/order/history" element={<OrderHistory />} />
+        <Route path="/order/detail/:orderId" element={<OrderDetail />} />
+        <Route path="/order/workflow" element={<Navigate to="/order/create" replace />} />
+      </Routes>
+    </BrowserRouter>
   )
 }
 
