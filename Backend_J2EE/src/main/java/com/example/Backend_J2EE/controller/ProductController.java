@@ -1,6 +1,8 @@
 package com.example.Backend_J2EE.controller;
 
+import com.example.Backend_J2EE.dto.ApiResponse;
 import com.example.Backend_J2EE.dto.ProductDTO;
+import com.example.Backend_J2EE.dto.ProductDetailDTO;
 import com.example.Backend_J2EE.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -17,7 +19,16 @@ public class ProductController {
     private final ProductService productService;
 
     @GetMapping
-    public ResponseEntity<List<ProductDTO>> getAllProducts() {
-        return ResponseEntity.ok(productService.getAllProducts());
+    public ResponseEntity<ApiResponse<List<ProductDTO>>> getAllProducts() {
+        return ResponseEntity.ok(ApiResponse.success(productService.getAllProducts()));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse<ProductDetailDTO>> getProductById(@PathVariable Integer id) {
+        ProductDetailDTO product = productService.getProductById(id);
+        if (product == null) {
+            return ResponseEntity.ok(ApiResponse.error("Không tìm thấy sản phẩm với id: " + id));
+        }
+        return ResponseEntity.ok(ApiResponse.success(product));
     }
 }

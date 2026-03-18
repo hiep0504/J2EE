@@ -9,7 +9,7 @@ function HomePage() {
 
   useEffect(() => {
     getAllProducts()
-      .then(res => setProducts(res.data))
+      .then(res => setProducts(res))
       .catch(() => setError('Không thể tải sản phẩm.'))
       .finally(() => setLoading(false));
   }, []);

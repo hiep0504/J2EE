@@ -1,0 +1,24 @@
+# ==================== ENV ====================
+.env
+*.env.local
+
+# ==================== Java / Maven ====================
+Backend_J2EE/target/
+Backend_J2EE/.mvn/wrapper/maven-wrapper.jar
+Backend_J2EE/*.iml
+Backend_J2EE/.idea/
+**/*.class
+
+# ==================== Node / React ====================
+Frontend_React/node_modules/
+Frontend_React/dist/
+Frontend_React/.vite/
+
+# ==================== IDE ====================
+.idea/
+.vscode/
+*.iml
+
+# ==================== OS ====================
+.DS_Store
+Thumbs.db

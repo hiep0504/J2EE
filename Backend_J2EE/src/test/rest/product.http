@@ -1,5 +1,17 @@
-### Tải extension REST Client rồi ấn send request nó sẽ trả ra response cho mình 
+### Tải extension REST Client rồi ấn send request nó sẽ trả ra response cho mình
 
 ### GET all products
 GET http://localhost:8080/api/products
+Accept: application/json
+
+###
+
+### GET product by ID - tìm sản phẩm tồn tại
+GET http://localhost:8080/api/products/1
+Accept: application/json
+
+###
+
+### GET product by ID - id không tồn tại (expect 500)
+GET http://localhost:8080/api/products/9999
 Accept: application/json
