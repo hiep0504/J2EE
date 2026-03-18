@@ -1,7 +1,3 @@
--- Sample data for all tables (except review_media)
--- Run this script after creating tables
-
--- 1. account (5 rows)
 INSERT IGNORE INTO account (username, password, email, phone, role) VALUES
 ('admin', '12345', 'admin@shop.com', '0901234567', 'admin'),
 ('user1', '12345', 'user1@gmail.com', '0912345678', 'user'),

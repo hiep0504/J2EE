@@ -7,7 +7,7 @@ const axiosInstance = axios.create({
 axiosInstance.interceptors.response.use((response) => {
   const apiResponse = response.data;
 
-  if (apiResponse.isSuccess === false) {
+  if (apiResponse.success === false) {
     return Promise.reject(new Error(apiResponse.message));
   }
 

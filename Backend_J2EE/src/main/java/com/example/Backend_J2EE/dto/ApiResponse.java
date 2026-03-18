@@ -9,13 +9,13 @@ import lombok.*;
 @Builder
 public class ApiResponse<T> {
 
-    private boolean isSuccess;
+    private boolean success;
     private String message;
     private T data;
 
     public static <T> ApiResponse<T> success(T data) {
         return ApiResponse.<T>builder()
-                .isSuccess(true)
+                .success(true)
                 .message("")
                 .data(data)
                 .build();
@@ -23,7 +23,7 @@ public class ApiResponse<T> {
 
     public static <T> ApiResponse<T> error(String message) {
         return ApiResponse.<T>builder()
-                .isSuccess(false)
+                .success(false)
                 .message(message)
                 .data(null)
                 .build();
