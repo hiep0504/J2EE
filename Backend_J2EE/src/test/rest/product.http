@@ -15,3 +15,27 @@ Accept: application/json
 ### GET product by ID - id không tồn tại (expect 500)
 GET http://localhost:8080/api/products/9999
 Accept: application/json
+
+###
+
+### GET search products - keyword hợp lệ
+GET http://localhost:8080/api/products/search?keyword=áo
+Accept: application/json
+
+###
+
+### GET search products - keyword tiếng Anh
+GET http://localhost:8080/api/products/search?keyword=shirt
+Accept: application/json
+
+###
+
+### GET search products - keyword không có kết quả
+GET http://localhost:8080/api/products/search?keyword=xyzkhongtontai
+Accept: application/json
+
+###
+
+### GET search products - keyword rỗng (trả về tất cả)
+GET http://localhost:8080/api/products/search?keyword=
+Accept: application/json

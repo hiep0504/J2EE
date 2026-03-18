@@ -23,6 +23,11 @@ public class ProductController {
         return ResponseEntity.ok(ApiResponse.success(productService.getAllProducts()));
     }
 
+    @GetMapping("/search")
+    public ResponseEntity<ApiResponse<List<ProductDTO>>> searchProducts(@RequestParam String keyword) {
+        return ResponseEntity.ok(ApiResponse.success(productService.searchProducts(keyword)));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<ProductDetailDTO>> getProductById(@PathVariable Integer id) {
         ProductDetailDTO product = productService.getProductById(id);

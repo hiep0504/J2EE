@@ -22,6 +22,13 @@ public class ProductService {
                 .toList();
     }
 
+    public List<ProductDTO> searchProducts(String keyword) {
+        return productRepository.findByNameContainingIgnoreCase(keyword)
+                .stream()
+                .map(this::toDTO)
+                .toList();
+    }
+
     public ProductDetailDTO getProductById(Integer id) {
         return productRepository.findById(id)
                 .map(this::toDetailDTO)
