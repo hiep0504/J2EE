@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import './App.css';
 
 // Layout
@@ -13,34 +13,34 @@ import ProductReview from './View/Product/ProductReview';
 import OrderCreate from './View/Order/OrderCreate';
 import OrderHistory from './View/Order/OrderHistory';
 import OrderDetail from './View/Order/OrderDetail';
+import OrderPaymentResult from './View/Order/OrderPaymentResult';
 
 function App() {
   return (
-    <BrowserRouter>
-      <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-        
-        <Header />
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
 
-        <div style={{ flex: 1 }}>
-          <Routes>
-            {/* Home */}
-            <Route path="/" element={<HomePage />} />
+      <Header />
 
-            {/* Product */}
-            <Route path="/product/review" element={<ProductReview />} />
+      <div style={{ flex: 1 }}>
+        <Routes>
+          {/* Home */}
+          <Route path="/" element={<HomePage />} />
 
-            {/* Order */}
-            <Route path="/order/create" element={<OrderCreate />} />
-            <Route path="/order/history" element={<OrderHistory />} />
-            <Route path="/order/detail/:orderId" element={<OrderDetail />} />
-            <Route path="/order/workflow" element={<Navigate to="/order/create" replace />} />
-          </Routes>
-        </div>
+          {/* Product */}
+          <Route path="/product/review" element={<ProductReview />} />
 
-        <Footer />
-
+          {/* Order */}
+          <Route path="/order/create" element={<OrderCreate />} />
+          <Route path="/order/history" element={<OrderHistory />} />
+          <Route path="/order/detail/:orderId" element={<OrderDetail />} />
+          <Route path="/order/payment-result" element={<OrderPaymentResult />} />
+          <Route path="/order/workflow" element={<Navigate to="/order/create" replace />} />
+        </Routes>
       </div>
-    </BrowserRouter>
+
+      <Footer />
+
+    </div>
   );
 }
 

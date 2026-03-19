@@ -46,15 +46,15 @@ function OrderHistory() {
 
   return (
     <main className="page">
-      <section className="card">
-        <div className="todo-header">
-          <h1>Lịch sử đơn hàng</h1>
-          <button type="button" className="outline-button" onClick={goCreate}>
+      <section className="card shadow-lg border-0">
+        <div className="todo-header mb-3">
+          <h1 className="h3 mb-0">Lịch sử đơn hàng</h1>
+          <button type="button" className="outline-button btn btn-outline-secondary" onClick={goCreate}>
             Quay lại tạo đơn
           </button>
         </div>
 
-        <div className="media-row order-item-row">
+        <div className="media-row order-item-row mb-3">
           <input
             type="number"
             min="1"
@@ -62,29 +62,29 @@ function OrderHistory() {
             onChange={(event) => setAccountId(event.target.value)}
             placeholder="Nhập accountId"
           />
-          <button type="button" className="primary-button" onClick={() => loadOrderHistory(accountId)}>
+          <button type="button" className="primary-button btn btn-primary" onClick={() => loadOrderHistory(accountId)}>
             Xem lịch sử đơn hàng
           </button>
         </div>
 
         <div className="review-list">
-          {orderHistory.length === 0 && <p>Chưa có đơn hàng nào.</p>}
+          {orderHistory.length === 0 && <p className="text-muted">Chưa có đơn hàng nào.</p>}
           {orderHistory.map((order) => (
-            <article key={order.id} className="review-item">
+            <article key={order.id} className="review-item border rounded-3 p-3 shadow-sm">
               <div className="review-top">
                 <strong>Đơn #{order.id}</strong>
                 <span className="stars-text">{order.status}</span>
               </div>
               <p>Ngày đặt: {formatDate(order.orderDate)}</p>
               <p>Tổng tiền: {toCurrency(order.totalPrice)}</p>
-              <button type="button" className="outline-button" onClick={() => goDetail(order.id)}>
+              <button type="button" className="outline-button btn btn-outline-primary" onClick={() => goDetail(order.id)}>
                 Xem chi tiết đơn hàng
               </button>
             </article>
           ))}
         </div>
 
-        {status && <p className="status">{status}</p>}
+        {status && <p className="status mt-3 text-muted">{status}</p>}
       </section>
     </main>
   )

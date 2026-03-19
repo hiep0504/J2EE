@@ -1,0 +1,29 @@
+//Created by CTT VNPAY
+
+extends layout
+
+block content
+    h3=title
+    div.table-responsive
+        form#createOrder(action='create_payment_url', method='POST')
+            div.form-group
+                label Số tiền
+                input.form-control#amount(name='amount', placeholder='Số tiền', value=amount)
+
+            div.form-group
+                label Chọn Phương thức thanh toán:
+                p.text-info Để trống để VNPay hiển thị tất cả phương thức có sẵn
+                input(type="hidden", name="bankCode", value="")
+            div.form-group
+                label Ngôn ngữ
+                label.control-label
+                div.controls
+                    label.radio-inline
+                        input(type="radio", name="language", id="vnLanguage", value="vn", checked="true")
+                        |  Tiếng việt
+                div.controls
+                    label.radio-inline
+                        input(type="radio", name="language", id="enLanguage", value="en")
+                        |  Tiếng anh
+            button.btn.btn-default#btnPopup(type='submit') Thanh toán
+    p &nbsp;

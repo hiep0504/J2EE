@@ -49,20 +49,20 @@ function OrderDetail() {
 
   return (
     <main className="page">
-      <section className="card">
-        <div className="todo-header">
-          <h1>Chi tiết đơn hàng</h1>
+      <section className="card shadow-lg border-0">
+        <div className="todo-header mb-3">
+          <h1 className="h3 mb-0">Chi tiết đơn hàng</h1>
           <div className="todo-header">
-            <button type="button" className="outline-button" onClick={goHistory}>
+            <button type="button" className="outline-button btn btn-outline-secondary" onClick={goHistory}>
               Xem lịch sử đơn hàng
             </button>
-            <button type="button" className="subtle-button" onClick={goCreate}>
+            <button type="button" className="subtle-button btn btn-light" onClick={goCreate}>
               Tạo đơn hàng
             </button>
           </div>
         </div>
 
-        <div className="media-row order-item-row">
+        <div className="media-row order-item-row mb-3">
           <input
             type="number"
             min="1"
@@ -70,16 +70,16 @@ function OrderDetail() {
             onChange={(event) => setAccountId(event.target.value)}
             placeholder="Nhập accountId"
           />
-          <button type="button" className="primary-button" onClick={() => viewOrderDetail(orderId, accountId)}>
+          <button type="button" className="primary-button btn btn-primary" onClick={() => viewOrderDetail(orderId, accountId)}>
             Tải lại chi tiết
           </button>
         </div>
 
-        {!orderDetail && <p>Không có dữ liệu chi tiết đơn hàng.</p>}
+        {!orderDetail && <p className="text-muted">Không có dữ liệu chi tiết đơn hàng.</p>}
 
         {orderDetail && (
           <div className="review-list">
-            <article className="review-item">
+            <article className="review-item border rounded-3 p-3 shadow-sm">
               <div className="review-top">
                 <strong>Đơn #{orderDetail.id}</strong>
                 <span className="stars-text">{orderDetail.status}</span>
@@ -88,9 +88,9 @@ function OrderDetail() {
               <p>Địa chỉ: {orderDetail.address}</p>
               <p>SĐT: {orderDetail.phone}</p>
               <p>Tổng tiền: {toCurrency(orderDetail.totalPrice)}</p>
-              <div className="media-grid">
+              <div className="media-grid mt-3">
                 {(orderDetail.items || []).map((item) => (
-                  <div className="review-item" key={item.orderDetailId}>
+                  <div className="review-item border rounded-3 p-2" key={item.orderDetailId}>
                     <strong>{item.productName} - Size {item.sizeName}</strong>
                     <p>Số lượng: {item.quantity}</p>
                     <p>Đơn giá: {toCurrency(item.unitPrice)}</p>
@@ -102,7 +102,7 @@ function OrderDetail() {
           </div>
         )}
 
-        {status && <p className="status">{status}</p>}
+        {status && <p className="status mt-3 text-muted">{status}</p>}
       </section>
     </main>
   )
