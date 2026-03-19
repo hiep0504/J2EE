@@ -39,3 +39,17 @@ Accept: application/json
 ### GET search products - keyword rỗng (trả về tất cả)
 GET http://localhost:8080/api/products/search?keyword=
 Accept: application/json
+
+###
+
+### GET products by category - danh mục id=1 (Áo thun)
+GET http://localhost:8080/api/products/category/1
+Accept: application/json
+
+###
+
+### GET products by category - id không tồn tại (expect data=[])
+GET http://localhost:8080/api/products/category/9999
+Accept: application/json
+
+###

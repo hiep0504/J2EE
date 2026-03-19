@@ -29,6 +29,13 @@ public class ProductService {
                 .toList();
     }
 
+    public List<ProductDTO> getProductsByCategory(Integer categoryId) {
+        return productRepository.findByCategory_IdOrderByCreatedAtDesc(categoryId)
+                .stream()
+                .map(this::toDTO)
+                .toList();
+    }
+
     public ProductDetailDTO getProductById(Integer id) {
         return productRepository.findById(id)
                 .map(this::toDetailDTO)
