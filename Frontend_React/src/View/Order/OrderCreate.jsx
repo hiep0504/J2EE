@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { API_BASE, createEmptyItem, toCurrency } from './orderApi'
+import { API_BASE, createVnpayPayment, createEmptyItem, toCurrency } from './orderApi'
 
 function OrderCreate() {
   const navigate = useNavigate()
@@ -10,6 +10,7 @@ function OrderCreate() {
   const [options, setOptions] = useState([])
   const [items, setItems] = useState([createEmptyItem()])
   const [createdOrder, setCreatedOrder] = useState(null)
+  const [paymentMethod, setPaymentMethod] = useState('cod')
   const [status, setStatus] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -95,6 +96,18 @@ function OrderCreate() {
 
       const data = await response.json()
       setCreatedOrder(data)
+
+      if (paymentMethod === 'vnpay') {
+        setStatus(`Đơn hàng #${data.id} đã tạo. Đang chuyển sang VNPay...`)
+        const paymentUrl = await createVnpayPayment({
+          orderId: data.id,
+          accountId: Number(accountId),
+          orderInfo: `Thanh toan don hang #${data.id}`,
+        })
+        window.location.assign(paymentUrl)
+        return
+      }
+
       setStatus(`Tạo đơn hàng thành công #${data.id}`)
     } catch (error) {
       setStatus(error.message)
@@ -152,6 +165,30 @@ function OrderCreate() {
             />
           </label>
 
+          <fieldset className="payment-methods">
+            <legend>Phương thức thanh toán</legend>
+            <label className="payment-choice">
+              <input
+                type="radio"
+                name="paymentMethod"
+                value="cod"
+                checked={paymentMethod === 'cod'}
+                onChange={(event) => setPaymentMethod(event.target.value)}
+              />
+              <span>Thanh toán khi nhận hàng</span>
+            </label>
+            <label className="payment-choice">
+              <input
+                type="radio"
+                name="paymentMethod"
+                value="vnpay"
+                checked={paymentMethod === 'vnpay'}
+                onChange={(event) => setPaymentMethod(event.target.value)}
+              />
+              <span>Thanh toán online với VNPay</span>
+            </label>
+          </fieldset>
+
           <div>
             <p className="media-title">Sản phẩm đặt mua</p>
             {items.map((item, index) => (
@@ -184,7 +221,7 @@ function OrderCreate() {
           </div>
 
           <button className="primary-button" type="submit" disabled={isSubmitting}>
-            {isSubmitting ? 'Đang tạo...' : 'Tạo đơn hàng'}
+            {isSubmitting ? 'Đang xử lý...' : paymentMethod === 'vnpay' ? 'Tạo đơn và thanh toán VNPay' : 'Tạo đơn hàng'}
           </button>
         </form>
 

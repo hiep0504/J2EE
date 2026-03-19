@@ -4,6 +4,7 @@ import ProductReview from './View/Product/ProductReview'
 import OrderCreate from './View/Order/OrderCreate'
 import OrderHistory from './View/Order/OrderHistory'
 import OrderDetail from './View/Order/OrderDetail'
+import OrderPaymentResult from './View/Order/OrderPaymentResult'
 
 function App() {
   return (
@@ -13,6 +14,7 @@ function App() {
         <Route path="/order/create" element={<OrderCreate />} />
         <Route path="/order/history" element={<OrderHistory />} />
         <Route path="/order/detail/:orderId" element={<OrderDetail />} />
+        <Route path="/order/payment-result" element={<OrderPaymentResult />} />
         <Route path="/order/workflow" element={<Navigate to="/order/create" replace />} />
       </Routes>
     </BrowserRouter>
