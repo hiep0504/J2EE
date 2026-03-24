@@ -1,5 +1,3 @@
-import axios from 'axios';
+import apiClient from './apiClient'
 
-const API_URL = 'http://localhost:8080/api';
-
-export const getAllProducts = () => axios.get(`${API_URL}/products`);
+export const getAllProducts = () => apiClient.get('/products')

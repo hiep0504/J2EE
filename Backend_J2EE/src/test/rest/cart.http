@@ -1,0 +1,22 @@
+### Get cart (uses session cookie)
+GET http://localhost:8080/api/cart
+
+### Add item
+POST http://localhost:8080/api/cart/items
+Content-Type: application/json
+
+{
+  "productId": 1,
+  "quantity": 1
+}
+
+### Update quantity
+PUT http://localhost:8080/api/cart/items/1
+Content-Type: application/json
+
+{
+  "quantity": 2
+}
+
+### Remove item
+DELETE http://localhost:8080/api/cart/items/1
