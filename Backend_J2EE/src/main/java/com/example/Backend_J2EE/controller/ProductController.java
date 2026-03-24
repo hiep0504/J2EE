@@ -1,8 +1,9 @@
 package com.example.Backend_J2EE.controller;
 
-import com.example.Backend_J2EE.dto.product.ProductSummaryResponse;
-import com.example.Backend_J2EE.entity.Product;
-import com.example.Backend_J2EE.repository.ProductRepository;
+import com.example.Backend_J2EE.dto.ProductDTO;
+import com.example.Backend_J2EE.service.ProductService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -12,25 +13,14 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/products")
+@RequiredArgsConstructor
 @CrossOrigin(origins = "*")
 public class ProductController {
 
-    private final ProductRepository productRepository;
-
-    public ProductController(ProductRepository productRepository) {
-        this.productRepository = productRepository;
-    }
+    private final ProductService productService;
 
     @GetMapping
-    public List<ProductSummaryResponse> getAllProducts() {
-        List<Product> products = productRepository.findAllByOrderByCreatedAtDesc();
-        return products.stream()
-                .map(product -> new ProductSummaryResponse(
-                        product.getId(),
-                        product.getName(),
-                        product.getPrice(),
-                        product.getImage()
-                ))
-                .toList();
+    public ResponseEntity<List<ProductDTO>> getAllProducts() {
+        return ResponseEntity.ok(productService.getAllProducts());
     }
 }
