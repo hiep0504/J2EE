@@ -11,6 +11,7 @@ import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import AccountPage from './pages/AccountPage';
+import CartPage from './pages/CartPage';
 
 // Features
 import ProductReview from './View/Product/ProductReview';
@@ -75,6 +76,9 @@ function App() {
           <Route path="/order/history" element={<OrderHistory />} />
           <Route path="/order/detail/:orderId" element={<OrderDetail />} />
           <Route path="/order/workflow" element={<Navigate to="/order/create" replace />} />
+
+          {/* Cart */}
+          <Route path="/cart" element={<CartPage />} />
         </Routes>
       </div>
 

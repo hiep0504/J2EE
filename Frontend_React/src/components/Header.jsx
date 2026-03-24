@@ -6,6 +6,7 @@ function Header({ user, onLogout }) {
       <div className="d-flex align-items-center gap-3">
         <Link to="/" className="navbar-brand fw-bold mb-0">ShopApp</Link>
         <Link to="/" className="nav-link text-white-50">Sản phẩm</Link>
+        <Link to="/cart" className="nav-link text-white-50">Giỏ hàng</Link>
       </div>
 
       <div className="d-flex align-items-center gap-3">
