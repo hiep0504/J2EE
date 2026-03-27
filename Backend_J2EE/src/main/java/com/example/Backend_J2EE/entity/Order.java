@@ -47,7 +47,7 @@ public class Order {
     private List<OrderDetail> orderDetails = new ArrayList<>();
 
     public enum OrderStatus {
-        pending, processing, shipping, completed, cancelled
+        pending, confirmed, processing, shipping, completed, cancelled
     }
 
     @PrePersist

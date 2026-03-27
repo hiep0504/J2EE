@@ -12,6 +12,8 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import AccountPage from './pages/AccountPage';
 import CartPage from './pages/CartPage';
+import CartCheckoutPage from './pages/CartCheckoutPage';
+import ProductDetailPage from './pages/ProductDetailPage';
 
 // Features
 import ProductReview from './View/Product/ProductReview';
@@ -19,6 +21,16 @@ import OrderCreate from './View/Order/OrderCreate';
 import OrderHistory from './View/Order/OrderHistory';
 import OrderDetail from './View/Order/OrderDetail';
 import OrderPaymentResult from './View/Order/OrderPaymentResult';
+
+// Admin
+import RequireAdmin from './admin/RequireAdmin';
+import AdminLayout from './admin/AdminLayout';
+import DashboardPage from './admin/DashboardPage';
+import ProductsPage from './admin/ProductsPage';
+import CategoriesPage from './admin/CategoriesPage';
+import OrdersPage from './admin/OrdersPage';
+import UsersPage from './admin/UsersPage';
+import ReviewsPage from './admin/ReviewsPage';
 
 import { getMe } from './services/accountService';
 import { logout } from './services/authService';
@@ -52,14 +64,20 @@ function App() {
     }
   }
 
+  function handleSearch(keyword) {
+    const query = keyword.trim();
+    const search = query ? `?q=${encodeURIComponent(query)}` : '';
+    navigate(`/${search}`);
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      <Header user={user} onLogout={handleLogout} />
+      <Header user={user} onLogout={handleLogout} onSearch={handleSearch} />
 
       <div style={{ flex: 1 }}>
         <Routes>
           {/* Home */}
-          <Route path="/" element={<HomePage />} />
+          <Route path="/" element={<HomePage user={user} />} />
 
           {/* Auth */}
           <Route path="/login" element={<LoginPage onLoggedIn={refreshMe} />} />
@@ -70,6 +88,7 @@ function App() {
           />
 
           {/* Product */}
+          <Route path="/products/:productId" element={<ProductDetailPage />} />
           <Route path="/product/review" element={<ProductReview />} />
 
           {/* Order */}
@@ -81,6 +100,25 @@ function App() {
 
           {/* Cart */}
           <Route path="/cart" element={<CartPage />} />
+          <Route path="/cart/checkout" element={<CartCheckoutPage />} />
+
+          {/* Admin */}
+          <Route
+            path="/admin"
+            element={(
+              <RequireAdmin user={user} authChecked={authChecked}>
+                <AdminLayout user={user} />
+              </RequireAdmin>
+            )}
+          >
+            <Route index element={<Navigate to="dashboard" replace />} />
+            <Route path="dashboard" element={<DashboardPage />} />
+            <Route path="products" element={<ProductsPage />} />
+            <Route path="categories" element={<CategoriesPage />} />
+            <Route path="orders" element={<OrdersPage />} />
+            <Route path="users" element={<UsersPage />} />
+            <Route path="reviews" element={<ReviewsPage />} />
+          </Route>
         </Routes>
       </div>
 

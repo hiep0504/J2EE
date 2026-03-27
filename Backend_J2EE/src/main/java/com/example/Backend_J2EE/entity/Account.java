@@ -38,6 +38,9 @@ public class Account {
     @Column(name = "role", length = 10)
     private Role role = Role.user;
 
+    @Column(name = "is_locked")
+    private Boolean locked = false;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
@@ -51,6 +54,11 @@ public class Account {
     @OneToMany(mappedBy = "account", cascade = CascadeType.ALL)
     private List<Review> reviews = new ArrayList<>();
 
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @OneToOne(mappedBy = "account", cascade = CascadeType.ALL)
+    private Cart cart;
+
     public enum Role {
         admin, user
     }
@@ -60,3 +68,4 @@ public class Account {
         createdAt = LocalDateTime.now();
     }
 }
+

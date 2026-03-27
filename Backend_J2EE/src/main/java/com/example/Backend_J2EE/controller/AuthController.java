@@ -5,6 +5,7 @@ import com.example.Backend_J2EE.dto.auth.LoginRequest;
 import com.example.Backend_J2EE.dto.auth.RegisterRequest;
 import com.example.Backend_J2EE.entity.Account;
 import com.example.Backend_J2EE.service.AuthService;
+import com.example.Backend_J2EE.service.CartService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -20,9 +21,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final AuthService authService;
+    private final CartService cartService;
 
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService, CartService cartService) {
         this.authService = authService;
+        this.cartService = cartService;
     }
 
     @PostMapping("/register")
@@ -35,6 +38,10 @@ public class AuthController {
     public AccountProfileResponse login(@RequestBody LoginRequest request, HttpSession session) {
         Account account = authService.login(request);
         session.setAttribute(AuthService.SESSION_ACCOUNT_ID, account.getId());
+        
+        // Merge session cart to database
+        cartService.mergeSessionCartToDatabase(account.getId(), session);
+        
         return authService.toProfile(account);
     }
 

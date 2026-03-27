@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 public class ProductDTO {
 
     private Integer id;
+    private Integer categoryId;
     private String name;
     private BigDecimal price;
     private String description;

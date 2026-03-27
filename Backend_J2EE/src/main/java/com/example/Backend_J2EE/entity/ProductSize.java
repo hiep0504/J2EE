@@ -7,7 +7,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "product_sizes")
+@Table(
+    name = "product_sizes",
+    uniqueConstraints = {
+        @UniqueConstraint(name = "uk_product_size", columnNames = {"product_id", "size_id"})
+    }
+)
 @Getter
 @Setter
 @NoArgsConstructor
@@ -35,3 +40,4 @@ public class ProductSize {
     @OneToMany(mappedBy = "productSize", cascade = CascadeType.ALL)
     private List<OrderDetail> orderDetails = new ArrayList<>();
 }
+

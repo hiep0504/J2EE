@@ -11,5 +11,6 @@ import lombok.Setter;
 @AllArgsConstructor
 public class UpdateCartItemRequest {
 
+    private Integer sizeId;
     private Integer quantity;
 }

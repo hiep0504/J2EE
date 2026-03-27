@@ -56,6 +56,10 @@ public class AuthService {
         Optional<Account> found = accountRepository.findByUsernameOrEmail(key, key);
         Account account = found.orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Sai tai khoan hoac mat khau"));
 
+        if (Boolean.TRUE.equals(account.getLocked())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Tai khoan da bi khoa");
+        }
+
         if (!PasswordHasher.matches(request.getPassword(), account.getPassword())) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Sai tai khoan hoac mat khau");
         }

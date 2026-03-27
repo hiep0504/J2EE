@@ -24,6 +24,7 @@ public class ProductService {
     private ProductDTO toDTO(Product product) {
         return ProductDTO.builder()
                 .id(product.getId())
+                .categoryId(product.getCategory() != null ? product.getCategory().getId() : null)
                 .name(product.getName())
                 .price(product.getPrice())
                 .description(product.getDescription())

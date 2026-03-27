@@ -1,18 +1,68 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import './ProductCard.css';
 import { addToCart } from '../services/cartService';
 
 function ProductCard({ product }) {
+  const [adding, setAdding] = useState(false);
+  const [message, setMessage] = useState('');
+  const [showSizes, setShowSizes] = useState(false);
+  const [sizes, setSizes] = useState([]);
+  const [selectedSize, setSelectedSize] = useState('');
+  const [loadingSizes, setLoadingSizes] = useState(false);
+
+  async function loadSizes() {
+    if (sizes.length > 0) return;
+    setLoadingSizes(true);
+    try {
+      const res = await fetch(`http://localhost:8080/api/products/${product.id}/sizes`);
+      if (res.ok) {
+        const data = await res.json();
+        setSizes(Array.isArray(data) ? data : []);
+        if (data.length > 0) {
+          setSelectedSize(data[0].sizeId);
+        }
+      }
+    } catch {
+      setMessage('✗ Không thể tải size');
+    } finally {
+      setLoadingSizes(false);
+    }
+  }
+
   async function handleAddToCart(e) {
     e.preventDefault();
     e.stopPropagation();
+
+    if (!selectedSize) {
+      setMessage('✗ Vui lòng chọn size');
+      return;
+    }
+
+    setAdding(true);
+    setMessage('');
     try {
-      await addToCart(product.id, 1);
+      await addToCart(product.id, parseInt(selectedSize), 1);
+      setMessage('✓ Đã thêm vào giỏ');
+      setTimeout(() => {
+        setMessage('');
+        setShowSizes(false);
+      }, 2000);
     } catch (err) {
-      // keep UI minimal; log for debugging
+      const errorMsg = err?.response?.data?.message || err?.message || 'Thất bại. Vui lòng thử lại.';
+      setMessage('✗ ' + errorMsg);
       console.error('Add to cart failed', err);
+    } finally {
+      setAdding(false);
     }
   }
+
+  const handleShowSizes = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setShowSizes(true);
+    loadSizes();
+  };
 
   return (
     <Link to={`/products/${product.id}`} className="text-decoration-none text-dark">
@@ -29,13 +79,68 @@ function ProductCard({ product }) {
             {Number(product.price).toLocaleString('vi-VN')}đ
           </p>
 
-          <button
-            type="button"
-            className="btn btn-sm btn-outline-dark mt-3 w-100"
-            onClick={handleAddToCart}
-          >
-            Thêm vào giỏ
-          </button>
+          {!showSizes ? (
+            <button
+              type="button"
+              className="btn btn-sm btn-outline-dark mt-3 w-100"
+              onClick={handleShowSizes}
+              disabled={adding}
+            >
+              {adding ? 'Đang thêm...' : 'Thêm vào giỏ'}
+            </button>
+          ) : (
+            <div className="mt-3" onClick={(e) => e.stopPropagation()}>
+              <div className="mb-2">
+                <label className="form-label small">Chọn size:</label>
+                {loadingSizes ? (
+                  <p className="small text-muted">Đang tải size...</p>
+                ) : sizes.length === 0 ? (
+                  <p className="small text-danger">Không có size</p>
+                ) : (
+                  <select
+                    className="form-select form-select-sm"
+                    value={selectedSize}
+                    onChange={(e) => setSelectedSize(e.target.value)}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {sizes.map((s) => (
+                      <option key={s.sizeId} value={s.sizeId}>
+                        {s.sizeName}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+              <div className="d-grid gap-1">
+                <button
+                  type="button"
+                  className="btn btn-sm btn-dark"
+                  onClick={handleAddToCart}
+                  disabled={adding || sizes.length === 0}
+                >
+                  {adding ? 'Đang thêm...' : 'Xác nhận'}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-secondary"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setShowSizes(false);
+                    setMessage('');
+                  }}
+                >
+                  Hủy
+                </button>
+              </div>
+            </div>
+          )}
+
+          {message && (
+            <p className={`small mt-2 mb-0 ${message.startsWith('✓') ? 'text-success' : 'text-danger'}`}>
+              {message}
+            </p>
+          )}
         </div>
       </div>
     </Link>
@@ -43,3 +148,4 @@ function ProductCard({ product }) {
 }
 
 export default ProductCard;
+

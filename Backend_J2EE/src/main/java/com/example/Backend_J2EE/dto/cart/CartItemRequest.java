@@ -12,5 +12,6 @@ import lombok.Setter;
 public class CartItemRequest {
 
     private Integer productId;
+    private Integer sizeId;
     private Integer quantity;
 }

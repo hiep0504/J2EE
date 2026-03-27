@@ -1,4 +1,5 @@
 ﻿import { useEffect, useMemo, useState } from 'react'
+import { useParams, useSearchParams } from 'react-router-dom'
 
 const API_BASE = 'http://localhost:8080/api'
 const SELECTED_PRODUCT_STORAGE_KEY = 'product-review-selected-product-id'
@@ -13,6 +14,8 @@ function renderStars(count) {
 }
 
 function ProductReview() {
+  const { productId } = useParams()
+  const [searchParams] = useSearchParams()
   const [products, setProducts] = useState([])
   const [selectedProductId, setSelectedProductId] = useState('')
   const [reviews, setReviews] = useState([])
@@ -37,9 +40,11 @@ function ProductReview() {
 
   const imageCount = imageFiles.length
 
+  const productIdFromQuery = searchParams.get('productId')
+
   useEffect(() => {
     loadProducts()
-  }, [])
+  }, [productId, productIdFromQuery])
 
   useEffect(() => {
     if (!selectedProductId) return
@@ -61,12 +66,18 @@ function ProductReview() {
       const fullProducts = Array.isArray(data) ? data : []
       setProducts(fullProducts)
 
+      const routeOrQueryProductId = String(productId || productIdFromQuery || '')
+      const hasProductFromUrl = fullProducts.some(
+        (item) => String(item.id) === routeOrQueryProductId
+      )
       const rememberedProductId = localStorage.getItem(SELECTED_PRODUCT_STORAGE_KEY)
       const hasRememberedProduct = fullProducts.some(
         (item) => String(item.id) === rememberedProductId
       )
 
-      if (hasRememberedProduct) {
+      if (hasProductFromUrl) {
+        setSelectedProductId(routeOrQueryProductId)
+      } else if (hasRememberedProduct) {
         setSelectedProductId(rememberedProductId)
       } else if (fullProducts.length > 0) {
         setSelectedProductId(String(fullProducts[0].id))

@@ -2,6 +2,7 @@ package com.example.Backend_J2EE.config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -12,6 +13,12 @@ import java.nio.file.Paths;
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
+
+    private final AdminAuthorizationInterceptor adminAuthorizationInterceptor;
+
+    public WebConfig(AdminAuthorizationInterceptor adminAuthorizationInterceptor) {
+        this.adminAuthorizationInterceptor = adminAuthorizationInterceptor;
+    }
 
     @Value("${app.upload.dir:uploads}")
     private String uploadDir;
@@ -29,5 +36,11 @@ public class WebConfig implements WebMvcConfigurer {
         String uploadUri = uploadRoot.toUri().toString();
         registry.addResourceHandler("/uploads/**")
                 .addResourceLocations(uploadUri);
+    }
+
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(adminAuthorizationInterceptor)
+                .addPathPatterns("/api/admin/**");
     }
 }

@@ -10,7 +10,7 @@ public interface ProductSizeRepository extends JpaRepository<ProductSize, Intege
 
     List<ProductSize> findByProduct_Id(Integer productId);
 
-    Optional<ProductSize> findByProduct_IdAndSize_Id(Integer productId, Integer sizeId);
+    Optional<ProductSize> findFirstByProduct_IdAndSize_IdOrderByIdAsc(Integer productId, Integer sizeId);
 
     boolean existsByProduct_IdAndSize_Id(Integer productId, Integer sizeId);
 }
