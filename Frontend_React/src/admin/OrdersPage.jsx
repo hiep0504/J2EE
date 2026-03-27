@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { getAdminOrderDetail, getAdminOrders, updateAdminOrderStatus } from '../services/adminService'
+import { toMediaUrl } from '../utils/mediaUrl'
 import './AdminPages.css'
 
 const statusOptions = ['pending', 'confirmed', 'shipping', 'completed', 'cancelled']
@@ -177,6 +178,7 @@ function OrdersPage() {
               <table className="admin-table">
                 <thead>
                   <tr>
+                    <th>Ảnh</th>
                     <th>Sản phẩm</th>
                     <th>Size</th>
                     <th>SL</th>
@@ -186,11 +188,21 @@ function OrdersPage() {
                 </thead>
                 <tbody>
                   {(detail.items || []).map((item) => (
-                    <tr key={item.id}>
+                    <tr key={item.orderDetailId || item.id}>
+                      <td>
+                        <img
+                          className="admin-order-thumb"
+                          src={toMediaUrl(item.productImage) || 'https://placehold.co/52x52?text=No+Image'}
+                          alt={item.productName || 'product'}
+                          onError={(event) => {
+                            event.currentTarget.src = 'https://placehold.co/52x52?text=No+Image'
+                          }}
+                        />
+                      </td>
                       <td>{item.productName}</td>
                       <td>{item.sizeName}</td>
                       <td>{item.quantity}</td>
-                      <td>{item.price}</td>
+                      <td>{item.unitPrice ?? item.price}</td>
                       <td>{item.lineTotal}</td>
                     </tr>
                   ))}

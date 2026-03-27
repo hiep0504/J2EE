@@ -1,5 +1,6 @@
 ﻿import { useEffect, useMemo, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
+import { toMediaUrl } from '../../utils/mediaUrl'
 
 const API_BASE = 'http://localhost:8080/api'
 const SELECTED_PRODUCT_STORAGE_KEY = 'product-review-selected-product-id'
@@ -286,9 +287,9 @@ function ProductReview() {
               <div className="media-grid">
                 {(review.media || []).map((media) =>
                   media.mediaType === 'video' ? (
-                    <video key={media.id} src={`http://localhost:8080${media.mediaUrl}`} controls />
+                    <video key={media.id} src={toMediaUrl(media.mediaUrl)} controls />
                   ) : (
-                    <img key={media.id} src={`http://localhost:8080${media.mediaUrl}`} alt="review" />
+                    <img key={media.id} src={toMediaUrl(media.mediaUrl)} alt="review" />
                   )
                 )}
               </div>

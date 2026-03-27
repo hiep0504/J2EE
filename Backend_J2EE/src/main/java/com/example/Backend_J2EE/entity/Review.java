@@ -8,7 +8,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "reviews")
+@Table(
+    name = "reviews",
+    uniqueConstraints = {
+        @UniqueConstraint(name = "uk_review_account_product", columnNames = {"account_id", "product_id"})
+    }
+)
 @Getter
 @Setter
 @NoArgsConstructor

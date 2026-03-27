@@ -11,6 +11,8 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
 
     List<Order> findByAccount_IdOrderByOrderDateDesc(Integer accountId);
 
+    List<Order> findByAccount_IdAndStatusOrderByOrderDateDesc(Integer accountId, Order.OrderStatus status);
+
     List<Order> findByStatus(Order.OrderStatus status);
 
     List<Order> findAllByOrderByOrderDateDesc();

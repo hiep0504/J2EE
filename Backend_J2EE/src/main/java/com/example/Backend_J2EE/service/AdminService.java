@@ -14,6 +14,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Optional;
 
 @Service
 public class AdminService {
@@ -217,6 +218,7 @@ public class AdminService {
                             detail.getId(),
                             ps != null ? ps.getId() : null,
                             ps != null && ps.getProduct() != null ? ps.getProduct().getName() : null,
+                            ps != null && ps.getProduct() != null ? resolveProductImage(ps.getProduct()) : "",
                             ps != null && ps.getSize() != null ? ps.getSize().getSizeName() : null,
                             detail.getQuantity(),
                             detail.getPrice(),
@@ -411,6 +413,24 @@ public class AdminService {
                 order.getPhone(),
                 order.getOrderDate()
         );
+    }
+
+    private String resolveProductImage(Product product) {
+        if (product.getImage() != null && !product.getImage().isBlank()) {
+            return product.getImage();
+        }
+
+        Optional<ProductImage> mainImage = productImageRepository.findByProduct_IdAndIsMainTrue(product.getId());
+        if (mainImage.isPresent() && mainImage.get().getImageUrl() != null) {
+            return mainImage.get().getImageUrl();
+        }
+
+        return productImageRepository.findByProduct_Id(product.getId())
+                .stream()
+                .map(ProductImage::getImageUrl)
+                .filter(url -> url != null && !url.isBlank())
+                .findFirst()
+                .orElse("");
     }
 
     private AdminUserResponse toUserResponse(Account account) {

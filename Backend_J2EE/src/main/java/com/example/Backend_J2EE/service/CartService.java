@@ -514,6 +514,7 @@ public class CartService {
                             detail.getId(),
                             ps != null ? ps.getId() : null,
                             ps != null && ps.getProduct() != null ? ps.getProduct().getName() : null,
+                            ps != null && ps.getProduct() != null ? ps.getProduct().getImage() : "",
                             ps != null && ps.getSize() != null ? ps.getSize().getSizeName() : null,
                             detail.getQuantity(),
                             detail.getPrice(),

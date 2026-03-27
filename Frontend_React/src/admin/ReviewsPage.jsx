@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { deleteAdminReview, getAdminReviews } from '../services/adminService'
+import { toMediaUrl } from '../utils/mediaUrl'
 import './AdminPages.css'
 
 function ReviewsPage() {
@@ -66,7 +67,7 @@ function ReviewsPage() {
                 <td>
                   {(item.media || []).map((mediaItem) => (
                     <div key={mediaItem.id}>
-                      <a href={mediaItem.mediaUrl} target="_blank" rel="noreferrer">{mediaItem.mediaType}</a>
+                      <a href={toMediaUrl(mediaItem.mediaUrl)} target="_blank" rel="noreferrer">{mediaItem.mediaType}</a>
                     </div>
                   ))}
                 </td>

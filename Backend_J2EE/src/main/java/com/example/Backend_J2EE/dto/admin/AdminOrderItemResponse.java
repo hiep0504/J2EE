@@ -11,6 +11,7 @@ public class AdminOrderItemResponse {
     private Integer id;
     private Integer productSizeId;
     private String productName;
+    private String productImage;
     private String sizeName;
     private Integer quantity;
     private BigDecimal price;

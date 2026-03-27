@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { addToCart } from '../services/cartService';
 import { getAllProducts } from '../services/productService';
+import { toMediaUrl } from '../utils/mediaUrl';
 import './ProductDetailPage.css';
 
 function toCurrency(value) {
@@ -158,7 +159,7 @@ function ProductDetailPage() {
       <section className="product-detail__card">
         <div className="product-detail__media">
           <img
-            src={product.image || 'https://placehold.co/700x700?text=No+Image'}
+            src={toMediaUrl(product.image || 'https://placehold.co/700x700?text=No+Image')}
             alt={product.name}
           />
         </div>
@@ -250,10 +251,10 @@ function ProductDetailPage() {
                     {(review.media || []).map((media) => (
                       media.mediaType === 'video'
                         ? (
-                          <video key={media.id} src={`http://localhost:8080${media.mediaUrl}`} controls />
+                          <video key={media.id} src={toMediaUrl(media.mediaUrl)} controls />
                         )
                         : (
-                          <img key={media.id} src={`http://localhost:8080${media.mediaUrl}`} alt="review" />
+                          <img key={media.id} src={toMediaUrl(media.mediaUrl)} alt="review" />
                         )
                     ))}
                   </div>

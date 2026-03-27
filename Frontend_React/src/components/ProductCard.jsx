@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import './ProductCard.css';
 import { addToCart } from '../services/cartService';
+import { toMediaUrl } from '../utils/mediaUrl';
 
 function ProductCard({ product }) {
   const [adding, setAdding] = useState(false);
@@ -68,7 +69,7 @@ function ProductCard({ product }) {
     <Link to={`/products/${product.id}`} className="text-decoration-none text-dark">
       <div className="card h-100 product-card">
         <img
-          src={product.image || 'https://placehold.co/300x300?text=No+Image'}
+          src={toMediaUrl(product.image || 'https://placehold.co/300x300?text=No+Image')}
           alt={product.name}
           className="card-img-top product-card__image"
         />
