@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { login } from '../services/authService'
+import { GoogleLogin } from '@react-oauth/google'
+import { login, loginWithGoogle } from '../services/authService'
 
 function LoginPage({ onLoggedIn }) {
   const navigate = useNavigate()
@@ -31,6 +32,32 @@ function LoginPage({ onLoggedIn }) {
     }
   }
 
+  async function handleGoogleSuccess(credentialResponse) {
+    const idToken = credentialResponse?.credential
+    if (!idToken) {
+      setStatus('Không lấy được thông tin đăng nhập Google')
+      return
+    }
+
+    setSubmitting(true)
+    setStatus('')
+
+    try {
+      await loginWithGoogle({ idToken })
+      await onLoggedIn?.()
+      navigate('/account')
+    } catch (error) {
+      const message = error?.response?.data?.message || 'Đăng nhập Google thất bại'
+      setStatus(message)
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  function handleGoogleError() {
+    setStatus('Đăng nhập Google thất bại')
+  }
+
   return (
     <main className="container py-4" style={{ maxWidth: 520 }}>
       <h5 className="mb-3">Đăng nhập</h5>
@@ -59,6 +86,18 @@ function LoginPage({ onLoggedIn }) {
         <button className="btn btn-dark mt-3" type="submit" disabled={submitting}>
           {submitting ? 'Đang đăng nhập...' : 'Đăng nhập'}
         </button>
+
+        <div className="my-3 text-center text-muted">hoặc</div>
+
+        {import.meta.env.VITE_GOOGLE_CLIENT_ID ? (
+          <div className="d-flex justify-content-center">
+            <GoogleLogin onSuccess={handleGoogleSuccess} onError={handleGoogleError} />
+          </div>
+        ) : (
+          <div className="alert alert-info mb-0">
+            Chưa cấu hình Google Client ID. Vui lòng thêm biến môi trường <strong>VITE_GOOGLE_CLIENT_ID</strong>.
+          </div>
+        )}
 
         <div className="mt-3">
           <small>

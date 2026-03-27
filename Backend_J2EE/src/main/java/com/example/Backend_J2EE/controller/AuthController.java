@@ -1,6 +1,7 @@
 package com.example.Backend_J2EE.controller;
 
 import com.example.Backend_J2EE.dto.account.AccountProfileResponse;
+import com.example.Backend_J2EE.dto.auth.GoogleLoginRequest;
 import com.example.Backend_J2EE.dto.auth.LoginRequest;
 import com.example.Backend_J2EE.dto.auth.RegisterRequest;
 import com.example.Backend_J2EE.entity.Account;
@@ -42,6 +43,16 @@ public class AuthController {
         // Merge session cart to database
         cartService.mergeSessionCartToDatabase(account.getId(), session);
         
+        return authService.toProfile(account);
+    }
+
+    @PostMapping("/google")
+    public AccountProfileResponse loginWithGoogle(@RequestBody GoogleLoginRequest request, HttpSession session) {
+        Account account = authService.loginWithGoogle(request);
+        session.setAttribute(AuthService.SESSION_ACCOUNT_ID, account.getId());
+
+        cartService.mergeSessionCartToDatabase(account.getId(), session);
+
         return authService.toProfile(account);
     }
 

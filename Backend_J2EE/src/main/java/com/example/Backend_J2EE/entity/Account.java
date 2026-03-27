@@ -36,9 +36,22 @@ public class Account {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "role", length = 10)
+    @Builder.Default
     private Role role = Role.user;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "login_type", length = 10, columnDefinition = "ENUM('local','google')")
+    @Builder.Default
+    private LoginType loginType = LoginType.local;
+
+    @Column(name = "google_id", unique = true, length = 100)
+    private String googleId;
+
+    @Column(name = "avatar_url", length = 500)
+    private String avatarUrl;
+
     @Column(name = "is_locked")
+    @Builder.Default
     private Boolean locked = false;
 
     @Column(name = "created_at")
@@ -47,11 +60,13 @@ public class Account {
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     @OneToMany(mappedBy = "account", cascade = CascadeType.ALL)
+    @Builder.Default
     private List<Order> orders = new ArrayList<>();
 
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     @OneToMany(mappedBy = "account", cascade = CascadeType.ALL)
+    @Builder.Default
     private List<Review> reviews = new ArrayList<>();
 
     @ToString.Exclude
@@ -61,6 +76,10 @@ public class Account {
 
     public enum Role {
         admin, user
+    }
+
+    public enum LoginType {
+        local, google
     }
 
     @PrePersist

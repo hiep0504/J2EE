@@ -2,26 +2,37 @@ package com.example.Backend_J2EE.service;
 
 import com.example.Backend_J2EE.dto.account.AccountProfileResponse;
 import com.example.Backend_J2EE.dto.account.UpdateProfileRequest;
+import com.example.Backend_J2EE.dto.auth.GoogleLoginRequest;
 import com.example.Backend_J2EE.dto.auth.LoginRequest;
 import com.example.Backend_J2EE.dto.auth.RegisterRequest;
 import com.example.Backend_J2EE.entity.Account;
 import com.example.Backend_J2EE.repository.AccountRepository;
 import com.example.Backend_J2EE.util.PasswordHasher;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
 public class AuthService {
 
     public static final String SESSION_ACCOUNT_ID = "AUTH_ACCOUNT_ID";
+    private static final String GOOGLE_TOKEN_INFO_URL = "https://oauth2.googleapis.com/tokeninfo?id_token={idToken}";
 
     private final AccountRepository accountRepository;
+    private final RestTemplate restTemplate;
+    private final String googleClientId;
 
-    public AuthService(AccountRepository accountRepository) {
+    public AuthService(AccountRepository accountRepository, @Value("${app.google.client-id:}") String googleClientId) {
         this.accountRepository = accountRepository;
+        this.restTemplate = new RestTemplate();
+        this.googleClientId = googleClientId;
     }
 
     public AccountProfileResponse register(RegisterRequest request) {
@@ -43,6 +54,7 @@ public class AuthService {
                 .email(email)
                 .phone(request.getPhone() != null ? request.getPhone().trim() : null)
                 .role(Account.Role.user)
+                .loginType(Account.LoginType.local)
                 .build();
 
         Account saved = accountRepository.save(account);
@@ -60,6 +72,10 @@ public class AuthService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Tai khoan da bi khoa");
         }
 
+        if (account.getLoginType() == Account.LoginType.google) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Tai khoan nay dang nhap bang Google");
+        }
+
         if (!PasswordHasher.matches(request.getPassword(), account.getPassword())) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Sai tai khoan hoac mat khau");
         }
@@ -68,6 +84,64 @@ public class AuthService {
         if (account.getPassword() != null && !account.getPassword().startsWith("pbkdf2$")) {
             account.setPassword(PasswordHasher.hash(request.getPassword()));
             accountRepository.save(account);
+        }
+
+        return account;
+    }
+
+    public Account loginWithGoogle(GoogleLoginRequest request) {
+        validateGoogleLoginRequest(request);
+
+        Map<String, Object> tokenInfo = fetchGoogleTokenInfo(request.getIdToken().trim());
+
+        String googleId = asString(tokenInfo.get("sub"));
+        String email = asString(tokenInfo.get("email")).toLowerCase(Locale.ROOT);
+        String name = asString(tokenInfo.get("name"));
+        String avatarUrl = asString(tokenInfo.get("picture"));
+        String audience = asString(tokenInfo.get("aud"));
+        String emailVerified = asString(tokenInfo.get("email_verified"));
+
+        if (googleId.isBlank() || email.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Thong tin Google khong hop le");
+        }
+
+        if (!googleClientId.isBlank() && !googleClientId.equals(audience)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Google token khong dung client id");
+        }
+
+        if (!"true".equalsIgnoreCase(emailVerified)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Email Google chua duoc xac minh");
+        }
+
+        Optional<Account> byGoogleId = accountRepository.findByGoogleId(googleId);
+        Optional<Account> byEmail = accountRepository.findByEmail(email);
+
+        Account account = byGoogleId.or(() -> byEmail)
+                .orElseGet(() -> createGoogleAccount(googleId, email, name, avatarUrl));
+
+        if (Boolean.TRUE.equals(account.getLocked())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Tai khoan da bi khoa");
+        }
+
+        boolean changed = false;
+
+        if (account.getLoginType() != Account.LoginType.google) {
+            account.setLoginType(Account.LoginType.google);
+            changed = true;
+        }
+
+        if (account.getGoogleId() == null || account.getGoogleId().isBlank()) {
+            account.setGoogleId(googleId);
+            changed = true;
+        }
+
+        if (avatarUrl != null && !avatarUrl.isBlank() && !avatarUrl.equals(account.getAvatarUrl())) {
+            account.setAvatarUrl(avatarUrl);
+            changed = true;
+        }
+
+        if (changed) {
+            account = accountRepository.save(account);
         }
 
         return account;
@@ -147,5 +221,69 @@ public class AuthService {
         if (request.getPassword() == null || request.getPassword().isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Password la bat buoc");
         }
+    }
+
+    private void validateGoogleLoginRequest(GoogleLoginRequest request) {
+        if (request == null || request.getIdToken() == null || request.getIdToken().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Google idToken la bat buoc");
+        }
+    }
+
+    private Map<String, Object> fetchGoogleTokenInfo(String idToken) {
+        try {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> response = restTemplate.getForObject(GOOGLE_TOKEN_INFO_URL, Map.class, idToken);
+            if (response == null) {
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Khong xac thuc duoc Google token");
+            }
+            return response;
+        } catch (RestClientException ex) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Google token khong hop le");
+        }
+    }
+
+    private Account createGoogleAccount(String googleId, String email, String name, String avatarUrl) {
+        String username = generateUsername(email, name);
+
+        Account account = Account.builder()
+                .username(username)
+                .email(email)
+                .password(null)
+                .phone(null)
+                .role(Account.Role.user)
+                .loginType(Account.LoginType.google)
+                .googleId(googleId)
+                .avatarUrl(avatarUrl)
+                .build();
+
+        return accountRepository.save(account);
+    }
+
+    private String generateUsername(String email, String name) {
+        String base;
+
+        if (name != null && !name.isBlank()) {
+            base = name.trim().toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]", "");
+        } else {
+            int atIndex = email.indexOf('@');
+            base = atIndex > 0 ? email.substring(0, atIndex).toLowerCase(Locale.ROOT) : "googleuser";
+            base = base.replaceAll("[^a-z0-9]", "");
+        }
+
+        if (base.isBlank()) {
+            base = "googleuser";
+        }
+
+        String candidate = base;
+        int suffix = 1;
+        while (accountRepository.existsByUsername(candidate)) {
+            candidate = base + suffix;
+            suffix++;
+        }
+        return candidate;
+    }
+
+    private String asString(Object value) {
+        return value == null ? "" : value.toString();
     }
 }
