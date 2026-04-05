@@ -99,6 +99,26 @@
   background: rgba(14, 124, 134, 0.1);
 }
 
+.shop-header__icon-link {
+  padding: 4px;
+  color: #1f3c5a;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.18s ease;
+}
+
+.shop-header__icon-link svg {
+  width: 30px;
+  height: 30px;
+}
+
+.shop-header__icon-link:hover {
+  color: #0e7c86;
+  transform: translateY(-1px);
+}
+
 .shop-header__dropdown-toggle {
   border: none;
   cursor: pointer;
@@ -262,6 +282,10 @@
   .shop-header__link {
     flex: 1;
     text-align: center;
+  }
+
+  .shop-header__icon-link {
+    flex: 0 0 auto;
   }
 
   .shop-header__actions {

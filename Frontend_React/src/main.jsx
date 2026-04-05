@@ -8,12 +8,16 @@ import App from './App.jsx'
 
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || ''
 
+const appTree = (
+  <BrowserRouter>
+    <App />
+  </BrowserRouter>
+)
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <GoogleOAuthProvider clientId={googleClientId}>
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
-    </GoogleOAuthProvider>
+    {googleClientId
+      ? <GoogleOAuthProvider clientId={googleClientId}>{appTree}</GoogleOAuthProvider>
+      : appTree}
   </StrictMode>,
 )

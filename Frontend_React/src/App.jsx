@@ -14,6 +14,7 @@ import AccountPage from './pages/AccountPage';
 import CartPage from './pages/CartPage';
 import CartCheckoutPage from './pages/CartCheckoutPage';
 import ProductDetailPage from './pages/ProductDetailPage';
+import SupportChatPage from './pages/SupportChatPage';
 
 // Features
 import ProductReview from './View/Product/ProductReview';
@@ -31,6 +32,7 @@ import CategoriesPage from './admin/CategoriesPage';
 import OrdersPage from './admin/OrdersPage';
 import UsersPage from './admin/UsersPage';
 import ReviewsPage from './admin/ReviewsPage';
+import ChatSupportPage from './admin/ChatSupportPage';
 
 import { getMe } from './services/accountService';
 import { logout } from './services/authService';
@@ -89,6 +91,7 @@ function App() {
 
           {/* Product */}
           <Route path="/products/:productId" element={<ProductDetailPage />} />
+          <Route path="/support-chat" element={<SupportChatPage />} />
           <Route path="/product/review" element={<ProductReview />} />
 
           {/* Order */}
@@ -118,6 +121,7 @@ function App() {
             <Route path="orders" element={<OrdersPage />} />
             <Route path="users" element={<UsersPage />} />
             <Route path="reviews" element={<ReviewsPage />} />
+            <Route path="chat" element={<ChatSupportPage />} />
           </Route>
         </Routes>
       </div>

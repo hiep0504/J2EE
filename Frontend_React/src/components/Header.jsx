@@ -155,6 +155,15 @@ function Header({ user, onLogout, onSearch }) {
             </div>
 
             <Link to="/cart" className="shop-header__link">Giỏ hàng</Link>
+
+            <Link to="/support-chat" className="shop-header__icon-link" aria-label="Hỗ trợ chat" title="Hỗ trợ chat">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <path d="M12 4C16.97 4 21 7.58 21 12C21 16.42 16.97 20 12 20C10.76 20 9.58 19.78 8.5 19.38L4 20L5.06 16.74C3.77 15.38 3 13.75 3 12C3 7.58 7.03 4 12 4Z" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+                <circle cx="9" cy="12" r="1.1" fill="currentColor" />
+                <circle cx="12" cy="12" r="1.1" fill="currentColor" />
+                <circle cx="15" cy="12" r="1.1" fill="currentColor" />
+              </svg>
+            </Link>
           </nav>
 
           <div className="shop-header__actions">
