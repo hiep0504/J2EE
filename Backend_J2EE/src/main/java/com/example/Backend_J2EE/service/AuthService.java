@@ -72,7 +72,7 @@ public class AuthService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Tai khoan da bi khoa");
         }
 
-        if (account.getLoginType() == Account.LoginType.google) {
+        if (account.getPassword() == null || account.getPassword().isBlank()) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Tai khoan nay dang nhap bang Google");
         }
 
@@ -125,7 +125,9 @@ public class AuthService {
 
         boolean changed = false;
 
-        if (account.getLoginType() != Account.LoginType.google) {
+        // Keep local accounts as local so they can continue logging in with password.
+        if ((account.getPassword() == null || account.getPassword().isBlank())
+                && account.getLoginType() != Account.LoginType.google) {
             account.setLoginType(Account.LoginType.google);
             changed = true;
         }

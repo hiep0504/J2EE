@@ -11,10 +11,12 @@ import org.springframework.web.server.ResponseStatusException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class AdminService {
@@ -354,10 +356,18 @@ public class AdminService {
     private void syncProductSizes(Product product, List<AdminProductSizeRequest> sizeRequests) {
         List<AdminProductSizeRequest> safeSizes = sizeRequests == null ? List.of() : sizeRequests.stream()
                 .filter(item -> item.getSizeId() != null)
-                .toList();
+            .collect(Collectors.toMap(
+                AdminProductSizeRequest::getSizeId,
+                item -> item,
+                (first, ignored) -> first,
+                LinkedHashMap::new
+            ))
+            .values()
+            .stream()
+            .toList();
 
-        productSizeRepository.findByProduct_Id(product.getId())
-                .forEach(productSizeRepository::delete);
+        productSizeRepository.deleteAll(productSizeRepository.findByProduct_Id(product.getId()));
+        productSizeRepository.flush();
 
         for (AdminProductSizeRequest item : safeSizes) {
             Size size = sizeRepository.findById(item.getSizeId())

@@ -9,19 +9,60 @@ INSERT IGNORE INTO account (username, password, email, phone, role) VALUES
 ('customer1', '12345', 'customer@email.com', '0934567890', 'user');
 
 -- 2. category (4 rows)
-INSERT IGNORE INTO category (name, description) VALUES
-('Áo thun', 'Các loại áo thun nam nữ'),
-('Quần jean', 'Quần jean cao cấp'),
-('Váy', 'Váy nữ đa dạng'),
-('Phụ kiện', 'Túi, mũ, thắt lưng');
+INSERT INTO category (name, description)
+SELECT 'Áo thun', 'Các loại áo thun nam nữ'
+WHERE NOT EXISTS (
+	SELECT 1 FROM category WHERE LOWER(TRIM(name)) = LOWER(TRIM('Áo thun'))
+);
+
+INSERT INTO category (name, description)
+SELECT 'Quần jean', 'Quần jean cao cấp'
+WHERE NOT EXISTS (
+	SELECT 1 FROM category WHERE LOWER(TRIM(name)) = LOWER(TRIM('Quần jean'))
+);
+
+INSERT INTO category (name, description)
+SELECT 'Váy', 'Váy nữ đa dạng'
+WHERE NOT EXISTS (
+	SELECT 1 FROM category WHERE LOWER(TRIM(name)) = LOWER(TRIM('Váy'))
+);
+
+INSERT INTO category (name, description)
+SELECT 'Phụ kiện', 'Túi, mũ, thắt lưng'
+WHERE NOT EXISTS (
+	SELECT 1 FROM category WHERE LOWER(TRIM(name)) = LOWER(TRIM('Phụ kiện'))
+);
 
 -- 3. product (5 rows)
-INSERT IGNORE INTO product (name, price, description, image, category_id) VALUES
-('Áo thun basic trắng', 199000, 'Áo thun cotton cao cấp', 'ao-thun-trang.jpg', 1),
-('Quần jean slim fit', 450000, 'Quần jean ôm form', 'quan-jean-slim.jpg', 2),
-('Váy midi hoa nhí', 350000, 'Váy nữ dạo phố', 'vay-midi-hoa.jpg', 3),
-('Áo thun form rộng', 249000, 'Áo oversized unisex', 'ao-form-rong.jpg', 1),
-('Túi đeo chéo canvas', 180000, 'Túi canvas thời trang', 'tui-deo-cheo.jpg', 4);
+INSERT INTO product (name, price, description, image, category_id)
+SELECT 'Áo thun basic trắng', 199000, 'Áo thun cotton cao cấp', 'ao-thun-trang.jpg', 1
+WHERE NOT EXISTS (
+	SELECT 1 FROM product WHERE LOWER(TRIM(name)) = LOWER(TRIM('Áo thun basic trắng'))
+);
+
+INSERT INTO product (name, price, description, image, category_id)
+SELECT 'Quần jean slim fit', 450000, 'Quần jean ôm form', 'quan-jean-slim.jpg', 2
+WHERE NOT EXISTS (
+	SELECT 1 FROM product WHERE LOWER(TRIM(name)) = LOWER(TRIM('Quần jean slim fit'))
+);
+
+INSERT INTO product (name, price, description, image, category_id)
+SELECT 'Váy midi hoa nhí', 350000, 'Váy nữ dạo phố', 'vay-midi-hoa.jpg', 3
+WHERE NOT EXISTS (
+	SELECT 1 FROM product WHERE LOWER(TRIM(name)) = LOWER(TRIM('Váy midi hoa nhí'))
+);
+
+INSERT INTO product (name, price, description, image, category_id)
+SELECT 'Áo thun form rộng', 249000, 'Áo oversized unisex', 'ao-form-rong.jpg', 1
+WHERE NOT EXISTS (
+	SELECT 1 FROM product WHERE LOWER(TRIM(name)) = LOWER(TRIM('Áo thun form rộng'))
+);
+
+INSERT INTO product (name, price, description, image, category_id)
+SELECT 'Túi đeo chéo canvas', 180000, 'Túi canvas thời trang', 'tui-deo-cheo.jpg', 4
+WHERE NOT EXISTS (
+	SELECT 1 FROM product WHERE LOWER(TRIM(name)) = LOWER(TRIM('Túi đeo chéo canvas'))
+);
 
 -- 4. sizes (4 rows)
 INSERT IGNORE INTO sizes (size_name) VALUES

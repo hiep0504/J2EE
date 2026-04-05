@@ -173,6 +173,8 @@ function ProductsPage() {
         sizeId: Number(item.sizeId),
         quantity: Number(item.quantity || 0),
       }))
+      .filter((item) => Number.isFinite(item.sizeId) && item.sizeId > 0)
+      .filter((item, index, list) => list.findIndex((entry) => entry.sizeId === item.sizeId) === index)
 
     const payload = {
       name: String(form.name || '').trim(),
