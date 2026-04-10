@@ -759,8 +759,136 @@
   margin-bottom: 10px;
 }
 
+.admin-toolbar--revenue {
+  margin-left: auto;
+  align-items: center;
+  width: min(100%, 980px);
+  display: grid;
+  grid-template-columns: auto minmax(140px, 180px) minmax(160px, 1fr) minmax(160px, 1fr) auto auto;
+  gap: 8px;
+}
+
+.admin-toolbar--revenue label {
+  color: #476387;
+  font-weight: 600;
+}
+
+.admin-revenue-shell {
+  display: grid;
+  gap: 12px;
+}
+
+.admin-revenue-cards {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.admin-revenue-card {
+  border: 1px solid #d9e3f0;
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: linear-gradient(180deg, #ffffff 0%, #f4f9ff 100%);
+}
+
+.admin-revenue-card p {
+  margin: 0;
+  color: #4f6b8b;
+  font-size: 0.86rem;
+}
+
+.admin-revenue-card h3 {
+  margin: 6px 0 0;
+  color: #11345c;
+  font-size: 1.1rem;
+}
+
+.admin-revenue-card h3.up {
+  color: #1f8a43;
+}
+
+.admin-revenue-card h3.down {
+  color: #b63f3f;
+}
+
+.admin-revenue-chart-wrap {
+  border: 1px solid #d9e3f0;
+  border-radius: 14px;
+  padding: 10px;
+  background: #ffffff;
+}
+
+.admin-revenue-chart {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.admin-revenue-chart__grid {
+  stroke: #e7eef7;
+  stroke-width: 1;
+}
+
+.admin-revenue-chart__axis-label {
+  fill: #597392;
+  font-size: 11px;
+}
+
+.admin-revenue-chart__month {
+  fill: #446486;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.admin-revenue-chart__bar {
+  fill: url(#barGradient);
+}
+
+.admin-revenue-chart__line {
+  fill: none;
+  stroke: #f48c2a;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.admin-revenue-chart__legend {
+  margin-top: 8px;
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  color: #47658a;
+  font-size: 0.86rem;
+}
+
+.legend-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 999px;
+  display: inline-block;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+.legend-dot--bar {
+  background: #18898f;
+}
+
+.legend-dot--line {
+  background: #f48c2a;
+}
+
 @media (max-width: 768px) {
   .admin-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-revenue-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-toolbar--revenue {
+    width: 100%;
     grid-template-columns: 1fr;
   }
 
@@ -820,6 +948,12 @@
   }
 
   .admin-chat-compose {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 540px) {
+  .admin-revenue-cards {
     grid-template-columns: 1fr;
   }
 }
