@@ -30,6 +30,7 @@ import DashboardPage from './admin/DashboardPage';
 import ProductsPage from './admin/ProductsPage';
 import CategoriesPage from './admin/CategoriesPage';
 import OrdersPage from './admin/OrdersPage';
+import RevenuePage from './admin/RevenuePage';
 import UsersPage from './admin/UsersPage';
 import ReviewsPage from './admin/ReviewsPage';
 import ChatSupportPage from './admin/ChatSupportPage';
@@ -119,6 +120,7 @@ function App() {
             <Route path="products" element={<ProductsPage />} />
             <Route path="categories" element={<CategoriesPage />} />
             <Route path="orders" element={<OrdersPage />} />
+            <Route path="revenue" element={<RevenuePage />} />
             <Route path="users" element={<UsersPage />} />
             <Route path="reviews" element={<ReviewsPage />} />
             <Route path="chat" element={<ChatSupportPage />} />
