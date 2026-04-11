@@ -16,6 +16,8 @@ public interface ReviewRepository extends JpaRepository<Review, Integer> {
 
     Optional<Review> findByAccount_IdAndProduct_Id(Integer accountId, Integer productId);
 
+    List<Review> findByAccount_IdAndProduct_IdOrderByCreatedAtDesc(Integer accountId, Integer productId);
+
     List<Review> findByAccount_IdAndProduct_IdIn(Integer accountId, List<Integer> productIds);
 
     boolean existsByProduct_IdAndAccount_Id(Integer productId, Integer accountId);

@@ -8,12 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(
-    name = "reviews",
-    uniqueConstraints = {
-        @UniqueConstraint(name = "uk_review_account_product", columnNames = {"account_id", "product_id"})
-    }
-)
+@Table(name = "reviews")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -44,6 +39,7 @@ public class Review {
 
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
+    @Builder.Default
     @OneToMany(mappedBy = "review", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ReviewMedia> reviewMediaList = new ArrayList<>();
 

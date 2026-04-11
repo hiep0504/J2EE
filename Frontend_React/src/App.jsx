@@ -91,14 +91,14 @@ function App() {
           />
 
           {/* Product */}
-          <Route path="/products/:productId" element={<ProductDetailPage />} />
+          <Route path="/products/:productId" element={<ProductDetailPage user={user} authChecked={authChecked} />} />
           <Route path="/support-chat" element={<SupportChatPage />} />
-          <Route path="/product/review" element={<ProductReview />} />
+          <Route path="/product/review" element={<ProductReview user={user} authChecked={authChecked} />} />
 
           {/* Order */}
-          <Route path="/order/create" element={<OrderCreate />} />
-          <Route path="/order/history" element={<OrderHistory />} />
-          <Route path="/order/detail/:orderId" element={<OrderDetail />} />
+          <Route path="/order/create" element={<OrderCreate user={user} authChecked={authChecked} />} />
+          <Route path="/order/history" element={<OrderHistory user={user} authChecked={authChecked} />} />
+          <Route path="/order/detail/:orderId" element={<OrderDetail user={user} authChecked={authChecked} />} />
           <Route path="/order/payment-result" element={<OrderPaymentResult />} />
           <Route path="/order/workflow" element={<Navigate to="/order/create" replace />} />
 
