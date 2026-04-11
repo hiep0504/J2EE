@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
-import { getAllProducts } from '../services/productService';
+import { getAllCategories, getAllProducts } from '../services/productService';
 import './HomePage.css';
 
 function HomePage({ user }) {
   const [searchParams] = useSearchParams();
   const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [keyword, setKeyword] = useState('');
@@ -27,8 +28,18 @@ function HomePage({ user }) {
     }
   }
 
+  async function loadCategories() {
+    try {
+      const res = await getAllCategories();
+      setCategories(Array.isArray(res.data) ? res.data : []);
+    } catch {
+      setCategories([]);
+    }
+  }
+
   useEffect(() => {
     loadProducts();
+    loadCategories();
   }, []);
 
   useEffect(() => {
@@ -93,6 +104,20 @@ function HomePage({ user }) {
 
       <section className="home-toolbar mb-4">
         <div className="row g-2 align-items-center">
+          <div className="col-12 col-md-4">
+            <select
+              className="form-select home-toolbar__select"
+              value={selectedCategoryId}
+              onChange={(event) => setSelectedCategoryId(event.target.value)}
+            >
+              <option value="">Tất cả danh mục</option>
+              {categories.map((category) => (
+                <option key={category.id} value={String(category.id)}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+          </div>
           <div className="col-7 col-md-4">
             <select
               className="form-select home-toolbar__select"

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getCart, removeCartItem, updateCartItem } from '../services/cartService'
+import { toMediaUrl } from '../utils/mediaUrl'
 
 function formatVnd(value) {
   const number = Number(value || 0)
@@ -156,7 +157,7 @@ function CartPage() {
                     </td>
                     <td>
                       <img
-                        src={it.image || 'https://placehold.co/80x80?text=No+Image'}
+                        src={toMediaUrl(it.image || 'https://placehold.co/80x80?text=No+Image')}
                         alt={it.name}
                         style={{ width: 64, height: 64, objectFit: 'cover', borderRadius: 8 }}
                       />

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import './ProductCard.css';
 import { addToCart } from '../services/cartService';
@@ -66,8 +66,8 @@ function ProductCard({ product }) {
   };
 
   return (
-    <Link to={`/products/${product.id}`} className="text-decoration-none text-dark">
-      <div className="card h-100 product-card">
+    <div className="card h-100 product-card">
+      <Link to={`/products/${product.id}`} className="product-card__link text-decoration-none text-dark">
         <img
           src={toMediaUrl(product.image || 'https://placehold.co/300x300?text=No+Image')}
           alt={product.name}
@@ -79,72 +79,73 @@ function ProductCard({ product }) {
           <p className="text-danger fw-bold mb-0">
             {Number(product.price).toLocaleString('vi-VN')}đ
           </p>
-
-          {!showSizes ? (
-            <button
-              type="button"
-              className="btn btn-sm btn-outline-dark mt-3 w-100"
-              onClick={handleShowSizes}
-              disabled={adding}
-            >
-              {adding ? 'Đang thêm...' : 'Thêm vào giỏ'}
-            </button>
-          ) : (
-            <div className="mt-3" onClick={(e) => e.stopPropagation()}>
-              <div className="mb-2">
-                <label className="form-label small">Chọn size:</label>
-                {loadingSizes ? (
-                  <p className="small text-muted">Đang tải size...</p>
-                ) : sizes.length === 0 ? (
-                  <p className="small text-danger">Không có size</p>
-                ) : (
-                  <select
-                    className="form-select form-select-sm"
-                    value={selectedSize}
-                    onChange={(e) => setSelectedSize(e.target.value)}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {sizes.map((s) => (
-                      <option key={s.sizeId} value={s.sizeId}>
-                        {s.sizeName}
-                      </option>
-                    ))}
-                  </select>
-                )}
-              </div>
-              <div className="d-grid gap-1">
-                <button
-                  type="button"
-                  className="btn btn-sm btn-dark"
-                  onClick={handleAddToCart}
-                  disabled={adding || sizes.length === 0}
-                >
-                  {adding ? 'Đang thêm...' : 'Xác nhận'}
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-sm btn-outline-secondary"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setShowSizes(false);
-                    setMessage('');
-                  }}
-                >
-                  Hủy
-                </button>
-              </div>
-            </div>
-          )}
-
-          {message && (
-            <p className={`small mt-2 mb-0 ${message.startsWith('✓') ? 'text-success' : 'text-danger'}`}>
-              {message}
-            </p>
-          )}
         </div>
+      </Link>
+
+      <div className="card-body pt-0">
+        {!showSizes ? (
+          <button
+            type="button"
+            className="btn btn-sm btn-outline-dark mt-3 w-100"
+            onClick={handleShowSizes}
+            disabled={adding}
+          >
+            {adding ? 'Đang thêm...' : 'Thêm vào giỏ'}
+          </button>
+        ) : (
+          <div className="mt-3">
+            <div className="mb-2">
+              <label className="form-label small">Chọn size:</label>
+              {loadingSizes ? (
+                <p className="small text-muted">Đang tải size...</p>
+              ) : sizes.length === 0 ? (
+                <p className="small text-danger">Không có size</p>
+              ) : (
+                <select
+                  className="form-select form-select-sm"
+                  value={selectedSize}
+                  onChange={(e) => setSelectedSize(e.target.value)}
+                >
+                  {sizes.map((s) => (
+                    <option key={s.sizeId} value={s.sizeId}>
+                      {s.sizeName}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+            <div className="d-grid gap-1">
+              <button
+                type="button"
+                className="btn btn-sm btn-dark"
+                onClick={handleAddToCart}
+                disabled={adding || sizes.length === 0}
+              >
+                {adding ? 'Đang thêm...' : 'Xác nhận'}
+              </button>
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-secondary"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setShowSizes(false);
+                  setMessage('');
+                }}
+              >
+                Hủy
+              </button>
+            </div>
+          </div>
+        )}
+
+        {message && (
+          <p className={`small mt-2 mb-0 ${message.startsWith('✓') ? 'text-success' : 'text-danger'}`}>
+            {message}
+          </p>
+        )}
       </div>
-    </Link>
+    </div>
   );
 }
 
