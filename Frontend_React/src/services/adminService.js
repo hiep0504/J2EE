@@ -48,6 +48,10 @@ export function updateAdminOrderStatus(id, payload) {
   return apiClient.put(`/admin/orders/${id}/status`, payload)
 }
 
+export function getAdminRevenueSummary(params) {
+  return apiClient.get('/admin/revenue', { params })
+}
+
 export function getAdminUsers(params) {
   return apiClient.get('/admin/users', { params })
 }

@@ -1,20 +1,19 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { API_BASE, formatDate, toCurrency } from './orderApi'
 
-function OrderDetail() {
+function OrderDetail({ user, authChecked }) {
   const navigate = useNavigate()
   const { orderId } = useParams()
-  const [searchParams] = useSearchParams()
-  const [accountId, setAccountId] = useState(searchParams.get('accountId') || '2')
   const [orderDetail, setOrderDetail] = useState(null)
   const [status, setStatus] = useState('')
+  const accountId = user?.id
 
   useEffect(() => {
     if (orderId && accountId) {
       viewOrderDetail(orderId, accountId)
     }
-  }, [orderId])
+  }, [orderId, accountId])
 
   async function viewOrderDetail(inputOrderId, inputAccountId) {
     const orderValue = String(inputOrderId || orderId || '').trim()
@@ -40,11 +39,25 @@ function OrderDetail() {
   }
 
   function goHistory() {
-    navigate(`/order/history?accountId=${accountId}`)
+    navigate('/order/history')
   }
 
   function goCreate() {
     navigate('/order/create')
+  }
+
+  if (authChecked && !user) {
+    return (
+      <main className="page">
+        <section className="card shadow-lg border-0">
+          <h1 className="h4 mb-3">Chi tiết đơn hàng</h1>
+          <p className="text-muted mb-3">Vui lòng đăng nhập để xem chi tiết đơn hàng.</p>
+          <button type="button" className="primary-button btn btn-primary" onClick={() => navigate('/login')}>
+            Đi đến đăng nhập
+          </button>
+        </section>
+      </main>
+    )
   }
 
   return (
@@ -63,13 +76,11 @@ function OrderDetail() {
         </div>
 
         <div className="media-row order-item-row mb-3">
-          <input
-            type="number"
-            min="1"
-            value={accountId}
-            onChange={(event) => setAccountId(event.target.value)}
-            placeholder="Nhập accountId"
-          />
+          {user && (
+            <p className="text-muted mb-0">
+              Tài khoản: <strong>{user.username}</strong>
+            </p>
+          )}
           <button type="button" className="primary-button btn btn-primary" onClick={() => viewOrderDetail(orderId, accountId)}>
             Tải lại chi tiết
           </button>

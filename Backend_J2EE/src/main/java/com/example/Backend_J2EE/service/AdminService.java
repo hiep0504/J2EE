@@ -9,10 +9,16 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -251,6 +257,137 @@ public class AdminService {
         order.setStatus(parseOrderStatus(request.getStatus()));
         Order saved = orderRepository.save(order);
         return toOrderResponse(saved);
+    }
+
+    public AdminRevenueSummaryResponse getRevenueSummary(Integer months, LocalDate fromDate, LocalDate toDate) {
+        DateFilterWindow dateFilterWindow = resolveDateFilterWindow(months, fromDate, toDate);
+        int normalizedMonths = dateFilterWindow.months;
+        YearMonth startMonth = dateFilterWindow.startMonth;
+        YearMonth endMonth = dateFilterWindow.endMonth;
+        LocalDate startDate = dateFilterWindow.startDate;
+        LocalDate endDate = dateFilterWindow.endDate;
+
+        Map<YearMonth, RevenueBucket> monthlyRevenueMap = new LinkedHashMap<>();
+        YearMonth cursor = startMonth;
+        while (!cursor.isAfter(endMonth)) {
+            monthlyRevenueMap.put(cursor, new RevenueBucket());
+            cursor = cursor.plusMonths(1);
+        }
+
+        Map<Integer, CustomerRevenueBucket> customerRevenueMap = new HashMap<>();
+
+        for (Order order : orderRepository.findAllByOrderByOrderDateDesc()) {
+            if (order.getOrderDate() == null || order.getStatus() != Order.OrderStatus.completed) {
+                continue;
+            }
+
+            LocalDate orderDay = order.getOrderDate().toLocalDate();
+            if (orderDay.isBefore(startDate) || orderDay.isAfter(endDate)) {
+                continue;
+            }
+
+            YearMonth period = YearMonth.from(order.getOrderDate());
+            RevenueBucket monthlyBucket = monthlyRevenueMap.get(period);
+            if (monthlyBucket == null) {
+                continue;
+            }
+
+            BigDecimal safeTotal = order.getTotalPrice() == null ? BigDecimal.ZERO : order.getTotalPrice();
+            monthlyBucket.revenue = monthlyBucket.revenue.add(safeTotal);
+            monthlyBucket.orderCount += 1;
+
+            Integer accountId = order.getAccount() != null ? order.getAccount().getId() : null;
+            String username = order.getAccount() != null ? order.getAccount().getUsername() : "Khach le";
+            Integer customerKey = accountId != null ? accountId : -1;
+            CustomerRevenueBucket customerBucket = customerRevenueMap.computeIfAbsent(
+                    customerKey,
+                    unused -> new CustomerRevenueBucket(accountId, username)
+            );
+            customerBucket.revenue = customerBucket.revenue.add(safeTotal);
+            customerBucket.orderCount += 1;
+        }
+
+        BigDecimal totalRevenue = BigDecimal.ZERO;
+        int totalOrders = 0;
+        List<AdminRevenuePointResponse> points = new ArrayList<>();
+
+        for (Map.Entry<YearMonth, RevenueBucket> entry : monthlyRevenueMap.entrySet()) {
+            YearMonth period = entry.getKey();
+            RevenueBucket bucket = entry.getValue();
+
+            totalRevenue = totalRevenue.add(bucket.revenue);
+            totalOrders += bucket.orderCount;
+
+            points.add(new AdminRevenuePointResponse(
+                    period.atDay(1),
+                    formatPeriodLabel(period),
+                    bucket.revenue,
+                    bucket.orderCount
+            ));
+        }
+
+        BigDecimal averageRevenue = normalizedMonths == 0
+                ? BigDecimal.ZERO
+                : totalRevenue.divide(BigDecimal.valueOf(normalizedMonths), 2, RoundingMode.HALF_UP);
+
+        BigDecimal trendPercent = calculateTrendPercent(points);
+        BigDecimal totalRevenueSnapshot = totalRevenue;
+
+        List<AdminRevenueCustomerResponse> topCustomers = customerRevenueMap.values().stream()
+                .sorted(Comparator.comparing((CustomerRevenueBucket item) -> item.revenue).reversed()
+                        .thenComparing((CustomerRevenueBucket item) -> item.orderCount, Comparator.reverseOrder()))
+                .limit(10)
+                .map(item -> new AdminRevenueCustomerResponse(
+                        item.accountId,
+                        item.username,
+                        item.revenue,
+                        item.orderCount,
+                        toPercent(item.revenue, totalRevenueSnapshot)
+                ))
+                .toList();
+
+        return new AdminRevenueSummaryResponse(
+                normalizedMonths,
+                totalRevenue,
+                totalOrders,
+                averageRevenue,
+                trendPercent,
+                points,
+                topCustomers
+        );
+    }
+
+    private DateFilterWindow resolveDateFilterWindow(Integer months, LocalDate fromDate, LocalDate toDate) {
+        if (fromDate == null && toDate == null) {
+            int normalizedMonths = months == null ? 6 : Math.max(1, Math.min(months, 24));
+            YearMonth endMonth = YearMonth.now();
+            YearMonth startMonth = endMonth.minusMonths(normalizedMonths - 1L);
+            return new DateFilterWindow(
+                    normalizedMonths,
+                    startMonth,
+                    endMonth,
+                    startMonth.atDay(1),
+                    endMonth.atEndOfMonth()
+            );
+        }
+
+        if (fromDate == null || toDate == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Can nhap day du tu ngay va den ngay");
+        }
+        if (fromDate.isAfter(toDate)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tu ngay khong duoc lon hon den ngay");
+        }
+
+        YearMonth startMonth = YearMonth.from(fromDate);
+        YearMonth endMonth = YearMonth.from(toDate);
+        int monthSpan = (endMonth.getYear() - startMonth.getYear()) * 12
+                + (endMonth.getMonthValue() - startMonth.getMonthValue()) + 1;
+
+        if (monthSpan > 36) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Khoang thoi gian toi da la 36 thang");
+        }
+
+        return new DateFilterWindow(monthSpan, startMonth, endMonth, fromDate, toDate);
     }
 
     public AdminPageResponse<AdminUserResponse> getUsers(String keyword, String role, int page, int size) {
@@ -514,6 +651,83 @@ public class AdminService {
 
     private String normalize(String value) {
         return value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private String formatPeriodLabel(YearMonth period) {
+        int month = period.getMonthValue();
+        int year = period.getYear();
+        return (month < 10 ? "0" : "") + month + "/" + year;
+    }
+
+    private BigDecimal calculateTrendPercent(List<AdminRevenuePointResponse> points) {
+        if (points.isEmpty()) {
+            return BigDecimal.ZERO;
+        }
+
+        int half = points.size() / 2;
+        if (half == 0) {
+            return BigDecimal.ZERO;
+        }
+
+        BigDecimal firstHalf = points.subList(0, half).stream()
+                .map(AdminRevenuePointResponse::getRevenue)
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal secondHalf = points.subList(half, points.size()).stream()
+                .map(AdminRevenuePointResponse::getRevenue)
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        if (firstHalf.compareTo(BigDecimal.ZERO) == 0) {
+            return secondHalf.compareTo(BigDecimal.ZERO) == 0
+                    ? BigDecimal.ZERO
+                    : new BigDecimal("100.00");
+        }
+
+        return secondHalf.subtract(firstHalf)
+                .multiply(new BigDecimal("100"))
+                .divide(firstHalf, 2, RoundingMode.HALF_UP);
+    }
+
+    private BigDecimal toPercent(BigDecimal part, BigDecimal total) {
+        if (part == null || total == null || total.compareTo(BigDecimal.ZERO) == 0) {
+            return BigDecimal.ZERO;
+        }
+        return part.multiply(new BigDecimal("100")).divide(total, 2, RoundingMode.HALF_UP);
+    }
+
+    private static class RevenueBucket {
+        private BigDecimal revenue = BigDecimal.ZERO;
+        private int orderCount = 0;
+    }
+
+    private static class CustomerRevenueBucket {
+        private final Integer accountId;
+        private final String username;
+        private BigDecimal revenue = BigDecimal.ZERO;
+        private int orderCount = 0;
+
+        private CustomerRevenueBucket(Integer accountId, String username) {
+            this.accountId = accountId;
+            this.username = username;
+        }
+    }
+
+    private static class DateFilterWindow {
+        private final int months;
+        private final YearMonth startMonth;
+        private final YearMonth endMonth;
+        private final LocalDate startDate;
+        private final LocalDate endDate;
+
+        private DateFilterWindow(int months, YearMonth startMonth, YearMonth endMonth, LocalDate startDate, LocalDate endDate) {
+            this.months = months;
+            this.startMonth = startMonth;
+            this.endMonth = endMonth;
+            this.startDate = startDate;
+            this.endDate = endDate;
+        }
     }
 
     private <T> AdminPageResponse<T> paginate(List<T> source, int page, int size) {

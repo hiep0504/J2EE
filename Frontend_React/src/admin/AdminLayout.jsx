@@ -3,10 +3,11 @@ import './AdminLayout.css'
 
 const navItems = [
   { to: '/admin/dashboard', label: 'Dashboard' },
+   { to: '/admin/revenue', label: 'Doanh thu' },
   { to: '/admin/products', label: 'Sản phẩm' },
   { to: '/admin/categories', label: 'Danh mục' },
   { to: '/admin/orders', label: 'Đơn hàng' },
-  { to: '/admin/users', label: 'Người dùng' },
+ { to: '/admin/users', label: 'Người dùng' },
   { to: '/admin/reviews', label: 'Đánh giá' },
   { to: '/admin/chat', label: 'CSKH Realtime' },
 ]

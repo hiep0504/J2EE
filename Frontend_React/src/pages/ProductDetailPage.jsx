@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { getMyPurchasedProducts } from '../services/accountPortalService';
 import { addToCart } from '../services/cartService';
 import { getAllProducts } from '../services/productService';
 import { toMediaUrl } from '../utils/mediaUrl';
@@ -14,10 +15,56 @@ function renderStars(value) {
   return '★'.repeat(Math.round(score)) + '☆'.repeat(5 - Math.round(score));
 }
 
-function ProductDetailPage() {
+function renderDetailSkeleton() {
+  return (
+    <main className="product-detail container py-4 py-lg-5">
+      <section className="product-detail__card">
+        <div className="skeleton skeleton-product-image product-detail__skeleton-media" />
+
+        <div className="skeleton-grid">
+          <div className="skeleton skeleton-line skeleton-line--sm" style={{ width: '34%' }} />
+          <div className="skeleton skeleton-line skeleton-line--lg" style={{ width: '72%' }} />
+          <div className="skeleton skeleton-line" style={{ width: '28%' }} />
+          <div className="skeleton skeleton-line" style={{ width: '96%' }} />
+          <div className="skeleton skeleton-line" style={{ width: '84%' }} />
+          <div className="skeleton skeleton-line" style={{ width: '66%', height: '44px', borderRadius: '12px' }} />
+          <div className="skeleton" style={{ width: '100%', height: '48px', borderRadius: '12px' }} />
+        </div>
+      </section>
+
+      <section className="product-detail__reviews mt-4 mt-lg-5">
+        <div className="product-detail__reviews-header">
+          <div className="skeleton skeleton-line skeleton-line--lg" style={{ width: '180px', marginBottom: '10px' }} />
+          <div className="skeleton skeleton-line" style={{ width: '260px' }} />
+        </div>
+
+        <div className="skeleton-grid">
+          {Array.from({ length: 3 }, (_, index) => (
+            <div key={index} className="skeleton-product-card" style={{ padding: '14px' }}>
+              <div className="skeleton skeleton-line" style={{ width: '42%', marginBottom: '10px' }} />
+              <div className="skeleton skeleton-line" style={{ width: '84%', marginBottom: '8px' }} />
+              <div className="skeleton skeleton-line" style={{ width: '70%', marginBottom: '14px' }} />
+              <div className="row g-2">
+                {Array.from({ length: 3 }, (_, thumbIndex) => (
+                  <div className="col-4" key={thumbIndex}>
+                    <div className="skeleton" style={{ width: '100%', aspectRatio: '1', borderRadius: '10px' }} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+    </main>
+  );
+}
+
+function ProductDetailPage({ user, authChecked }) {
   const { productId } = useParams();
   const [products, setProducts] = useState([]);
   const [reviews, setReviews] = useState([]);
+  const [purchasedProducts, setPurchasedProducts] = useState([]);
+  const [purchaseLoading, setPurchaseLoading] = useState(false);
   const [reviewLoading, setReviewLoading] = useState(false);
   const [reviewError, setReviewError] = useState('');
   const [loading, setLoading] = useState(true);
@@ -49,6 +96,14 @@ function ProductDetailPage() {
     () => products.find((item) => String(item.id) === String(productId)),
     [products, productId]
   );
+
+  const purchaseRecord = useMemo(
+    () => purchasedProducts.find((item) => String(item.productId) === String(productId)),
+    [purchasedProducts, productId]
+  );
+
+  const canWriteReview = !!user && !!purchaseRecord?.canReview;
+  const hasReviewed = !!purchaseRecord?.review;
 
   useEffect(() => {
     async function loadSizes() {
@@ -103,6 +158,27 @@ function ProductDetailPage() {
     loadReviews();
   }, [productId]);
 
+  useEffect(() => {
+    async function loadPurchasedProducts() {
+      if (!authChecked || !user) {
+        setPurchasedProducts([]);
+        return;
+      }
+
+      setPurchaseLoading(true);
+      try {
+        const res = await getMyPurchasedProducts();
+        setPurchasedProducts(Array.isArray(res.data) ? res.data : []);
+      } catch {
+        setPurchasedProducts([]);
+      } finally {
+        setPurchaseLoading(false);
+      }
+    }
+
+    loadPurchasedProducts();
+  }, [authChecked, user]);
+
   async function handleAddToCart() {
     if (!product) return;
     if (!selectedSize) {
@@ -125,11 +201,7 @@ function ProductDetailPage() {
   }
 
   if (loading) {
-    return (
-      <main className="product-detail container py-5">
-        <p className="text-center text-muted mb-0">Đang tải chi tiết sản phẩm...</p>
-      </main>
-    );
+    return renderDetailSkeleton();
   }
 
   if (error && !product) {
@@ -204,12 +276,24 @@ function ProductDetailPage() {
               {adding ? 'Đang thêm...' : 'Thêm vào giỏ'}
             </button>
             <Link to="/" className="btn btn-outline-dark">Tiếp tục mua sắm</Link>
-            <Link
-              to={`/product/review?productId=${product.id}`}
-              className="btn btn-outline-primary"
-            >
-              Viết đánh giá
-            </Link>
+            {authChecked && user && purchaseLoading && (
+              <span className="btn btn-outline-primary disabled" aria-disabled="true">
+                Đang kiểm tra mua hàng...
+              </span>
+            )}
+            {authChecked && user && !purchaseLoading && canWriteReview && (
+              <Link
+                to={`/product/review?productId=${product.id}`}
+                className="btn btn-outline-primary"
+              >
+                {hasReviewed ? 'Viết đánh giá lại' : 'Viết đánh giá'}
+              </Link>
+            )}
+            {authChecked && user && !purchaseLoading && !canWriteReview && hasReviewed && (
+              <span className="btn btn-outline-success disabled" aria-disabled="true">
+                Đã đánh giá
+              </span>
+            )}
           </div>
 
           {cartMessage && (
@@ -229,7 +313,24 @@ function ProductDetailPage() {
           </p>
         </div>
 
-        {reviewLoading && <p className="text-muted mb-0">Đang tải đánh giá...</p>}
+        {reviewLoading && (
+          <div className="skeleton-grid">
+            {Array.from({ length: 3 }, (_, index) => (
+              <div key={index} className="product-detail__review-item">
+                <div className="skeleton skeleton-line" style={{ width: '38%', marginBottom: '10px' }} />
+                <div className="skeleton skeleton-line" style={{ width: '88%', marginBottom: '8px' }} />
+                <div className="skeleton skeleton-line" style={{ width: '62%', marginBottom: '14px' }} />
+                <div className="row g-2">
+                  {Array.from({ length: 2 }, (_, thumbIndex) => (
+                    <div className="col-6" key={thumbIndex}>
+                      <div className="skeleton" style={{ width: '100%', aspectRatio: '1', borderRadius: '10px' }} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
         {!reviewLoading && reviewError && <p className="text-danger mb-0">{reviewError}</p>}
 
         {!reviewLoading && !reviewError && reviews.length === 0 && (

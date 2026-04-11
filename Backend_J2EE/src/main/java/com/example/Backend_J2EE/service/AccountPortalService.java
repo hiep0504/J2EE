@@ -135,16 +135,18 @@ public class AccountPortalService {
 
         List<Integer> productIds = new ArrayList<>(uniqueProducts.keySet());
         Map<Integer, Review> reviewByProductId = reviewRepository.findByAccount_IdAndProduct_IdIn(accountId, productIds)
-                .stream()
-                .collect(java.util.stream.Collectors.toMap(
-                        review -> review.getProduct().getId(),
-                        review -> review,
-                        (left, right) -> left
-                ));
+            .stream()
+            .sorted(Comparator.comparing(Review::getCreatedAt, Comparator.nullsLast(Comparator.reverseOrder())))
+            .collect(java.util.stream.Collectors.toMap(
+                review -> review.getProduct().getId(),
+                review -> review,
+                (left, right) -> left
+            ));
 
         for (AccountPurchasedProductResponse item : uniqueProducts.values()) {
             Review review = reviewByProductId.get(item.getProductId());
             item.setReview(review == null ? null : toOwnedReviewResponse(review));
+            item.setCanReview(canReviewAgain(item.getLastPurchasedAt(), review));
         }
 
         return uniqueProducts.values().stream()
@@ -164,11 +166,16 @@ public class AccountPortalService {
         Account account = authService.getAccountOrThrow(accountId);
         validateMedia(images, video);
 
-        if (reviewRepository.existsByProduct_IdAndAccount_Id(productId, accountId)) {
+        assertCompletedPurchase(accountId, productId);
+
+        Review latestReview = reviewRepository.findByAccount_IdAndProduct_IdOrderByCreatedAtDesc(accountId, productId)
+                .stream()
+                .findFirst()
+                .orElse(null);
+
+        if (latestReview != null && !canReviewAgain(accountId, productId, latestReview)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Ban da danh gia san pham nay roi");
         }
-
-        assertCompletedPurchase(accountId, productId);
 
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Khong tim thay san pham"));
@@ -179,8 +186,9 @@ public class AccountPortalService {
                 .rating(validateRating(rating))
                 .comment(comment == null ? "" : comment.trim())
                 .build();
-
+        review.setCreatedAt(LocalDateTime.now());
         review.setReviewMediaList(buildMediaList(review, images, video));
+
         Review saved = reviewRepository.save(review);
         return toOwnedReviewResponse(saved);
     }
@@ -298,6 +306,35 @@ public class AccountPortalService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Rating phai tu 1 den 5 sao");
         }
         return rating;
+    }
+
+    private boolean canReviewAgain(LocalDateTime lastPurchasedAt, Review latestReview) {
+        if (latestReview == null) {
+            return true;
+        }
+        if (lastPurchasedAt == null || latestReview.getCreatedAt() == null) {
+            return false;
+        }
+        return lastPurchasedAt.isAfter(latestReview.getCreatedAt());
+    }
+
+    private boolean canReviewAgain(Integer accountId, Integer productId, Review latestReview) {
+        LocalDateTime latestPurchaseAt = orderRepository.findByAccount_IdAndStatusOrderByOrderDateDesc(
+                        accountId,
+                        Order.OrderStatus.completed
+                )
+                .stream()
+                .filter(order -> order.getOrderDetails() != null && order.getOrderDetails().stream().anyMatch(detail -> {
+                    ProductSize productSize = detail.getProductSize();
+                    Product purchasedProduct = productSize != null ? productSize.getProduct() : null;
+                    return purchasedProduct != null && productId.equals(purchasedProduct.getId());
+                }))
+                .map(Order::getOrderDate)
+                .filter(value -> value != null)
+                .findFirst()
+                .orElse(null);
+
+        return canReviewAgain(latestPurchaseAt, latestReview);
     }
 
     private void assertCompletedPurchase(Integer accountId, Integer productId) {

@@ -437,6 +437,11 @@ function AccountPage({ authChecked, user, onRefreshed }) {
         </div>
 
         <p className="review-comment">{review.comment || 'Không có nội dung'}</p>
+        <p className="account-muted" style={{ marginBottom: '12px' }}>
+          {product.canReview
+            ? 'Bạn đã mua lại sản phẩm này, có thể đánh giá lại.'
+            : 'Bạn chỉ được viết đánh giá một lần cho lần mua hiện tại.'}
+        </p>
 
         <div className="review-media-grid">
           {(review.media || []).map((media) => (
@@ -448,14 +453,13 @@ function AccountPage({ authChecked, user, onRefreshed }) {
           ))}
         </div>
 
-        <div className="review-action-row">
-          <button className="account-btn" type="button" onClick={() => openEditReview(product)}>
-            Sửa đánh giá
-          </button>
-          <button className="account-btn account-btn-danger" type="button" onClick={() => handleDeleteReview(review.id)}>
-            Xóa đánh giá
-          </button>
-        </div>
+        {product.canReview && (
+          <div className="review-action-row" style={{ marginTop: '12px' }}>
+            <button className="account-btn account-btn-primary" type="button" onClick={() => openCreateReview(product)}>
+              Viết đánh giá lại
+            </button>
+          </div>
+        )}
       </div>
     )
   }

@@ -30,6 +30,7 @@ import DashboardPage from './admin/DashboardPage';
 import ProductsPage from './admin/ProductsPage';
 import CategoriesPage from './admin/CategoriesPage';
 import OrdersPage from './admin/OrdersPage';
+import RevenuePage from './admin/RevenuePage';
 import UsersPage from './admin/UsersPage';
 import ReviewsPage from './admin/ReviewsPage';
 import ChatSupportPage from './admin/ChatSupportPage';
@@ -90,14 +91,14 @@ function App() {
           />
 
           {/* Product */}
-          <Route path="/products/:productId" element={<ProductDetailPage />} />
+          <Route path="/products/:productId" element={<ProductDetailPage user={user} authChecked={authChecked} />} />
           <Route path="/support-chat" element={<SupportChatPage />} />
-          <Route path="/product/review" element={<ProductReview />} />
+          <Route path="/product/review" element={<ProductReview user={user} authChecked={authChecked} />} />
 
           {/* Order */}
-          <Route path="/order/create" element={<OrderCreate />} />
-          <Route path="/order/history" element={<OrderHistory />} />
-          <Route path="/order/detail/:orderId" element={<OrderDetail />} />
+          <Route path="/order/create" element={<OrderCreate user={user} authChecked={authChecked} />} />
+          <Route path="/order/history" element={<OrderHistory user={user} authChecked={authChecked} />} />
+          <Route path="/order/detail/:orderId" element={<OrderDetail user={user} authChecked={authChecked} />} />
           <Route path="/order/payment-result" element={<OrderPaymentResult />} />
           <Route path="/order/workflow" element={<Navigate to="/order/create" replace />} />
 
@@ -119,6 +120,7 @@ function App() {
             <Route path="products" element={<ProductsPage />} />
             <Route path="categories" element={<CategoriesPage />} />
             <Route path="orders" element={<OrdersPage />} />
+            <Route path="revenue" element={<RevenuePage />} />
             <Route path="users" element={<UsersPage />} />
             <Route path="reviews" element={<ReviewsPage />} />
             <Route path="chat" element={<ChatSupportPage />} />

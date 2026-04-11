@@ -2,6 +2,7 @@ package com.example.Backend_J2EE.controller;
 
 import com.example.Backend_J2EE.dto.admin.*;
 import com.example.Backend_J2EE.service.AdminService;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.util.StringUtils;
@@ -9,6 +10,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.time.LocalDate;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -114,6 +116,15 @@ public class AdminController {
     @PutMapping("/orders/{id}/status")
     public AdminOrderResponse updateOrderStatus(@PathVariable Integer id, @RequestBody AdminUpdateOrderStatusRequest request) {
         return adminService.updateOrderStatus(id, request);
+    }
+
+    @GetMapping("/revenue")
+    public AdminRevenueSummaryResponse getRevenueSummary(
+            @RequestParam(defaultValue = "6") Integer months,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate
+    ) {
+        return adminService.getRevenueSummary(months, fromDate, toDate);
     }
 
     @GetMapping("/users")

@@ -108,16 +108,16 @@ comment = VALUES(comment),
 created_at = VALUES(created_at);
 
 INSERT INTO orders (id, account_id, order_date, total_price, status, address, phone) VALUES
-(4001, (SELECT id FROM account WHERE username = 'user' LIMIT 1),  '2026-04-13 09:00:00', 329000.00, 'completed', '12 Nguyen Trai, Q1, TP.HCM', '0900000002'),
-(4002, (SELECT id FROM account WHERE username = 'user' LIMIT 1),  '2026-04-13 10:00:00', 459000.00, 'completed', '12 Nguyen Trai, Q1, TP.HCM', '0900000002'),
-(4003, (SELECT id FROM account WHERE username = 'user2' LIMIT 1), '2026-04-13 11:00:00', 299000.00, 'completed', '45 Le Loi, Q3, TP.HCM', '0900000003'),
+(4001, (SELECT id FROM account WHERE username = 'user' LIMIT 1),  '2026-02-13 09:00:00', 329000.00, 'completed', '12 Nguyen Trai, Q1, TP.HCM', '0900000002'),
+(4002, (SELECT id FROM account WHERE username = 'user' LIMIT 1),  '2026-02-13 10:00:00', 459000.00, 'completed', '12 Nguyen Trai, Q1, TP.HCM', '0900000002'),
+(4003, (SELECT id FROM account WHERE username = 'user2' LIMIT 1), '2026-03-13 11:00:00', 299000.00, 'completed', '45 Le Loi, Q3, TP.HCM', '0900000003'),
 (4004, (SELECT id FROM account WHERE username = 'user2' LIMIT 1), '2026-04-13 12:00:00', 429000.00, 'completed', '45 Le Loi, Q3, TP.HCM', '0900000003'),
-(4005, (SELECT id FROM account WHERE username = 'user3' LIMIT 1), '2026-04-13 13:00:00', 389000.00, 'completed', '80 Hai Ba Trung, Q3, TP.HCM', '0900000004'),
-(4006, (SELECT id FROM account WHERE username = 'user3' LIMIT 1), '2026-04-13 14:00:00', 219000.00, 'completed', '80 Hai Ba Trung, Q3, TP.HCM', '0900000004'),
-(4007, (SELECT id FROM account WHERE username = 'user4' LIMIT 1), '2026-04-13 15:00:00', 599000.00, 'completed', '22 Vo Van Tan, Q3, TP.HCM', '0900000005'),
-(4008, (SELECT id FROM account WHERE username = 'user4' LIMIT 1), '2026-04-13 16:00:00', 179000.00, 'completed', '22 Vo Van Tan, Q3, TP.HCM', '0900000005'),
+(4005, (SELECT id FROM account WHERE username = 'user3' LIMIT 1), '2026-02-13 13:00:00', 389000.00, 'completed', '80 Hai Ba Trung, Q3, TP.HCM', '0900000004'),
+(4006, (SELECT id FROM account WHERE username = 'user3' LIMIT 1), '2026-03-13 14:00:00', 219000.00, 'completed', '80 Hai Ba Trung, Q3, TP.HCM', '0900000004'),
+(4007, (SELECT id FROM account WHERE username = 'user4' LIMIT 1), '2026-03-13 15:00:00', 599000.00, 'completed', '22 Vo Van Tan, Q3, TP.HCM', '0900000005'),
+(4008, (SELECT id FROM account WHERE username = 'user4' LIMIT 1), '2026-02-13 16:00:00', 179000.00, 'completed', '22 Vo Van Tan, Q3, TP.HCM', '0900000005'),
 (4009, (SELECT id FROM account WHERE username = 'user5' LIMIT 1), '2026-04-13 17:00:00', 499000.00, 'completed', '99 Tran Hung Dao, Q5, TP.HCM', '0900000006'),
-(4010, (SELECT id FROM account WHERE username = 'user5' LIMIT 1), '2026-04-13 18:00:00', 219000.00, 'completed', '99 Tran Hung Dao, Q5, TP.HCM', '0900000006')
+(4010, (SELECT id FROM account WHERE username = 'user5' LIMIT 1), '2026-02-13 18:00:00', 219000.00, 'completed', '99 Tran Hung Dao, Q5, TP.HCM', '0900000006')
 ON DUPLICATE KEY UPDATE
 account_id = VALUES(account_id),
 order_date = VALUES(order_date),
