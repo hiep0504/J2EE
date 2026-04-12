@@ -112,7 +112,7 @@ function ProductDetailPage({ user, authChecked }) {
       setSizes([]);
       setSelectedSize('');
       try {
-        const res = await fetch(`http://localhost:8080/api/products/${product.id}/sizes`);
+        const res = await fetch(`https://busticket.ink/api/products/${product.id}/sizes`);
         if (res.ok) {
           const data = await res.json();
           setSizes(Array.isArray(data) ? data : []);
@@ -142,7 +142,7 @@ function ProductDetailPage({ user, authChecked }) {
       setReviewLoading(true);
       setReviewError('');
       try {
-        const response = await fetch(`http://localhost:8080/api/reviews?productId=${productId}`);
+        const response = await fetch(`https://busticket.ink/api/reviews?productId=${productId}`);
         if (!response.ok) {
           throw new Error('Không thể tải danh sách đánh giá.');
         }

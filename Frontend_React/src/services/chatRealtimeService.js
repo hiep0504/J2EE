@@ -10,7 +10,7 @@ function ensureClient() {
   }
 
   client = new Client({
-    webSocketFactory: () => new SockJS('http://localhost:8080/ws-chat'),
+    webSocketFactory: () => new SockJS('https://busticket.ink/ws-chat'),
     reconnectDelay: 3000,
     heartbeatIncoming: 15000,
     heartbeatOutgoing: 15000,

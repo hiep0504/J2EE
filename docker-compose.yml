@@ -1,0 +1,11 @@
+services:
+  backend:
+    image: backend-j2ee:latest
+    ports:
+      - "8080:8080"
+    env_file:
+      - ./Backend_J2EE/.env
+    volumes:
+      - ./Backend_J2EE/uploads:/app/uploads
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

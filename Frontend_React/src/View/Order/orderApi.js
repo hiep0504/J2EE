@@ -1,4 +1,4 @@
-export const API_BASE = 'http://localhost:8080/api'
+export const API_BASE = 'https://busticket.ink/api'
 
 export function toCurrency(value) {
   if (value === null || value === undefined) return '0 đ'

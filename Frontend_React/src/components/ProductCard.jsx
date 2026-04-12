@@ -16,7 +16,7 @@ function ProductCard({ product }) {
     if (sizes.length > 0) return;
     setLoadingSizes(true);
     try {
-      const res = await fetch(`http://localhost:8080/api/products/${product.id}/sizes`);
+      const res = await fetch(`https://busticket.ink/api/products/${product.id}/sizes`);
       if (res.ok) {
         const data = await res.json();
         setSizes(Array.isArray(data) ? data : []);

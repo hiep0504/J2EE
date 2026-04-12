@@ -3,7 +3,7 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { getMyPurchasedProducts } from '../../services/accountPortalService'
 import { toMediaUrl } from '../../utils/mediaUrl'
 
-const API_BASE = 'http://localhost:8080/api'
+const API_BASE = 'https://busticket.ink/api'
 
 function toCurrency(value) {
   if (value === null || value === undefined) return '0 đ'
