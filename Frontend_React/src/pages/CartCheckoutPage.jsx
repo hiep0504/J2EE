@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+﻿import { useEffect, useMemo, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { checkoutCart, getCart } from '../services/cartService'
 import { createVnPayPayment } from '../services/paymentService'
@@ -26,10 +26,17 @@ function CartCheckoutPage() {
   const [cart, setCart] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [address, setAddress] = useState('')
+  const [detailAddress, setDetailAddress] = useState('')
   const [phone, setPhone] = useState('')
   const [paymentMethod, setPaymentMethod] = useState('COD')
   const [submitting, setSubmitting] = useState(false)
+
+  const [provinces, setProvinces] = useState([])
+  const [districts, setDistricts] = useState([])
+  const [wards, setWards] = useState([])
+  const [selectedProvinceCode, setSelectedProvinceCode] = useState('')
+  const [selectedDistrictCode, setSelectedDistrictCode] = useState('')
+  const [selectedWardCode, setSelectedWardCode] = useState('')
 
   const selectedItemsInput = useMemo(() => {
     const fromState = normalizeSelectedItems(location.state?.selectedItems)
@@ -59,6 +66,103 @@ function CartCheckoutPage() {
     loadCart()
   }, [])
 
+  useEffect(() => {
+    let mounted = true
+
+    async function loadProvinces() {
+      try {
+        const res = await fetch('https://provinces.open-api.vn/api/p/')
+        if (!res.ok) throw new Error('Không thể tải tỉnh/thành')
+        const data = await res.json()
+        if (mounted) {
+          setProvinces(Array.isArray(data) ? data : [])
+        }
+      } catch {
+        if (mounted) {
+          setProvinces([])
+        }
+      }
+    }
+
+    loadProvinces()
+
+    return () => {
+      mounted = false
+    }
+  }, [])
+
+  useEffect(() => {
+    let mounted = true
+
+    async function loadDistricts() {
+      if (!selectedProvinceCode) {
+        setDistricts([])
+        setWards([])
+        setSelectedDistrictCode('')
+        setSelectedWardCode('')
+        return
+      }
+
+      try {
+        const res = await fetch(`https://provinces.open-api.vn/api/p/${selectedProvinceCode}?depth=2`)
+        if (!res.ok) throw new Error('Không thể tải quận/huyện')
+        const data = await res.json()
+        if (mounted) {
+          setDistricts(Array.isArray(data?.districts) ? data.districts : [])
+          setWards([])
+          setSelectedDistrictCode('')
+          setSelectedWardCode('')
+        }
+      } catch {
+        if (mounted) {
+          setDistricts([])
+          setWards([])
+          setSelectedDistrictCode('')
+          setSelectedWardCode('')
+        }
+      }
+    }
+
+    loadDistricts()
+
+    return () => {
+      mounted = false
+    }
+  }, [selectedProvinceCode])
+
+  useEffect(() => {
+    let mounted = true
+
+    async function loadWards() {
+      if (!selectedDistrictCode) {
+        setWards([])
+        setSelectedWardCode('')
+        return
+      }
+
+      try {
+        const res = await fetch(`https://provinces.open-api.vn/api/d/${selectedDistrictCode}?depth=2`)
+        if (!res.ok) throw new Error('Không thể tải phường/xã')
+        const data = await res.json()
+        if (mounted) {
+          setWards(Array.isArray(data?.wards) ? data.wards : [])
+          setSelectedWardCode('')
+        }
+      } catch {
+        if (mounted) {
+          setWards([])
+          setSelectedWardCode('')
+        }
+      }
+    }
+
+    loadWards()
+
+    return () => {
+      mounted = false
+    }
+  }, [selectedDistrictCode])
+
   const selectedKeys = useMemo(
     () => new Set(selectedItemsInput.map((item) => `${item.productId}-${item.sizeId}`)),
     [selectedItemsInput]
@@ -74,6 +178,27 @@ function CartCheckoutPage() {
     [selectedItems]
   )
 
+  const selectedProvinceName = useMemo(
+    () => provinces.find((p) => String(p.code) === String(selectedProvinceCode))?.name || '',
+    [provinces, selectedProvinceCode]
+  )
+
+  const selectedDistrictName = useMemo(
+    () => districts.find((d) => String(d.code) === String(selectedDistrictCode))?.name || '',
+    [districts, selectedDistrictCode]
+  )
+
+  const selectedWardName = useMemo(
+    () => wards.find((w) => String(w.code) === String(selectedWardCode))?.name || '',
+    [wards, selectedWardCode]
+  )
+
+  const fullAddress = useMemo(() => {
+    const parts = [detailAddress.trim(), selectedWardName, selectedDistrictName, selectedProvinceName]
+      .filter(Boolean)
+    return parts.join(', ')
+  }, [detailAddress, selectedWardName, selectedDistrictName, selectedProvinceName])
+
   async function handleSubmit(event) {
     event.preventDefault()
     setError('')
@@ -82,8 +207,12 @@ function CartCheckoutPage() {
       setError('Không có sản phẩm nào được chọn để thanh toán.')
       return
     }
-    if (!address.trim()) {
-      setError('Vui lòng nhập địa chỉ giao hàng.')
+    if (!selectedProvinceCode || !selectedDistrictCode || !selectedWardCode) {
+      setError('Vui lòng chọn đầy đủ Tỉnh/Thành, Quận/Huyện và Phường/Xã.')
+      return
+    }
+    if (!detailAddress.trim()) {
+      setError('Vui lòng nhập số nhà, tên đường.')
       return
     }
     if (!phone.trim()) {
@@ -99,7 +228,7 @@ function CartCheckoutPage() {
     try {
       setSubmitting(true)
       const checkoutRes = await checkoutCart({
-        address,
+        address: fullAddress,
         phone,
         paymentMethod,
         items: payloadItems,
@@ -109,7 +238,7 @@ function CartCheckoutPage() {
       localStorage.setItem('lastOrderId', String(order.id))
       localStorage.setItem('lastOrderAccountId', String(order.accountId || ''))
       localStorage.setItem('lastOrderTotal', String(order.totalPrice || 0))
-      localStorage.setItem('lastOrderAddress', order.address || address)
+      localStorage.setItem('lastOrderAddress', order.address || fullAddress)
       localStorage.setItem('lastOrderPhone', order.phone || phone)
       localStorage.setItem('lastOrderPaymentMethod', paymentMethod)
       if (order.orderDate) {
@@ -172,15 +301,71 @@ function CartCheckoutPage() {
                   </div>
 
                   <div className="mb-3">
-                    <label className="form-label">Địa chỉ giao hàng</label>
+                    <label className="form-label">Tỉnh/Thành phố</label>
+                    <select
+                      className="form-select"
+                      value={selectedProvinceCode}
+                      onChange={(e) => setSelectedProvinceCode(e.target.value)}
+                    >
+                      <option value="">Chọn Tỉnh/Thành phố</option>
+                      {provinces.map((province) => (
+                        <option key={province.code} value={String(province.code)}>
+                          {province.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="mb-3">
+                    <label className="form-label">Quận/Huyện</label>
+                    <select
+                      className="form-select"
+                      value={selectedDistrictCode}
+                      onChange={(e) => setSelectedDistrictCode(e.target.value)}
+                      disabled={!selectedProvinceCode}
+                    >
+                      <option value="">Chọn Quận/Huyện</option>
+                      {districts.map((district) => (
+                        <option key={district.code} value={String(district.code)}>
+                          {district.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="mb-3">
+                    <label className="form-label">Phường/Xã</label>
+                    <select
+                      className="form-select"
+                      value={selectedWardCode}
+                      onChange={(e) => setSelectedWardCode(e.target.value)}
+                      disabled={!selectedDistrictCode}
+                    >
+                      <option value="">Chọn Phường/Xã</option>
+                      {wards.map((ward) => (
+                        <option key={ward.code} value={String(ward.code)}>
+                          {ward.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="mb-3">
+                    <label className="form-label">Số nhà, tên đường</label>
                     <input
                       type="text"
                       className="form-control"
-                      value={address}
-                      onChange={(e) => setAddress(e.target.value)}
-                      placeholder="Số nhà, đường, quận/huyện, tỉnh/thành..."
+                      value={detailAddress}
+                      onChange={(e) => setDetailAddress(e.target.value)}
+                      placeholder="Ví dụ: 123 Nguyễn Trãi"
                     />
                   </div>
+
+                  {fullAddress ? (
+                    <div className="alert alert-light border mb-4">
+                      <strong>Địa chỉ giao hàng:</strong> {fullAddress}
+                    </div>
+                  ) : null}
 
                   <div className="mb-4">
                     <label className="form-label">Phương thức thanh toán</label>

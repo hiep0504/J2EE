@@ -1,51 +1,19 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import SearchBar from './SearchBar';
-import { getAllCategories } from '../services/productService';
 import './Header.css';
 
 function Header({ user, onLogout, onSearch }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const categoryRef = useRef(null);
   const userRef = useRef(null);
   const searchKeyword = new URLSearchParams(location.search).get('q') || '';
-  const selectedCategoryId = new URLSearchParams(location.search).get('categoryId') || '';
-  const [categories, setCategories] = useState([]);
-  const [showCategoryMenu, setShowCategoryMenu] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
 
   const isAdmin = String(user?.role || '').toLowerCase() === 'admin';
 
   useEffect(() => {
-    let mounted = true;
-
-    async function loadCategories() {
-      try {
-        const res = await getAllCategories();
-        if (mounted) {
-          setCategories(Array.isArray(res.data) ? res.data : []);
-        }
-      } catch {
-        if (mounted) {
-          setCategories([]);
-        }
-      }
-    }
-
-    loadCategories();
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  useEffect(() => {
     function handlePointerDown(event) {
-      if (showCategoryMenu && categoryRef.current && !categoryRef.current.contains(event.target)) {
-        setShowCategoryMenu(false);
-      }
-
       if (showUserMenu && userRef.current && !userRef.current.contains(event.target)) {
         setShowUserMenu(false);
       }
@@ -53,7 +21,6 @@ function Header({ user, onLogout, onSearch }) {
 
     function handleEscape(event) {
       if (event.key === 'Escape') {
-        setShowCategoryMenu(false);
         setShowUserMenu(false);
       }
     }
@@ -65,16 +32,7 @@ function Header({ user, onLogout, onSearch }) {
       document.removeEventListener('mousedown', handlePointerDown);
       document.removeEventListener('keydown', handleEscape);
     };
-  }, [showCategoryMenu, showUserMenu]);
-
-  const selectedCategoryLabel = useMemo(() => {
-    if (!selectedCategoryId) {
-      return 'Danh mục';
-    }
-
-    const selected = categories.find((category) => String(category.id) === String(selectedCategoryId));
-    return selected?.name || 'Danh mục';
-  }, [categories, selectedCategoryId]);
+  }, [showUserMenu]);
 
   function navigateWithQuery(nextParams) {
     const params = new URLSearchParams(location.search);
@@ -89,16 +47,6 @@ function Header({ user, onLogout, onSearch }) {
 
     const query = params.toString();
     navigate(query ? `/?${query}` : '/');
-  }
-
-  function handleSelectCategory(categoryId) {
-    navigateWithQuery({ categoryId });
-    setShowCategoryMenu(false);
-  }
-
-  function handleClearCategory() {
-    navigateWithQuery({ categoryId: '' });
-    setShowCategoryMenu(false);
   }
 
   return (
@@ -124,36 +72,6 @@ function Header({ user, onLogout, onSearch }) {
 
         <div className="shop-header__right">
           <nav className="shop-header__nav">
-            <div className="shop-header__dropdown" ref={categoryRef}>
-              <button
-                type="button"
-                className="shop-header__link shop-header__dropdown-toggle"
-                onClick={() => setShowCategoryMenu((prev) => !prev)}
-                aria-expanded={showCategoryMenu}
-              >
-                {selectedCategoryLabel}
-                <span className="shop-header__caret" aria-hidden="true">▾</span>
-              </button>
-
-              {showCategoryMenu && (
-                <div className="shop-header__menu" role="menu">
-                  <button type="button" className="shop-header__menu-item" onClick={handleClearCategory}>
-                    Tất cả danh mục
-                  </button>
-                  {categories.map((category) => (
-                    <button
-                      key={category.id}
-                      type="button"
-                      className="shop-header__menu-item"
-                      onClick={() => handleSelectCategory(String(category.id))}
-                    >
-                      {category.name}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
             <Link to="/cart" className="shop-header__link">Giỏ hàng</Link>
 
             <Link to="/ai-chat" className="shop-header__link">AI tư vấn</Link>

@@ -42,9 +42,6 @@ function OrderPaymentResult() {
   }, [payDate])
 
   const lastOrderId = typeof window !== 'undefined' ? localStorage.getItem('lastOrderId') : null
-  const lastOrderAccountId = typeof window !== 'undefined'
-    ? localStorage.getItem('lastOrderAccountId') || '2'
-    : '2'
 
   const lastOrderAddress = typeof window !== 'undefined' ? localStorage.getItem('lastOrderAddress') : null
   const lastOrderPhone = typeof window !== 'undefined' ? localStorage.getItem('lastOrderPhone') : null
@@ -75,12 +72,12 @@ function OrderPaymentResult() {
   }
 
   function goHistory() {
-    navigate(`/order/history?accountId=${lastOrderAccountId}`)
+    navigate('/order/history')
   }
 
   function goDetail() {
     if (!lastOrderId) return
-    navigate(`/order/detail/${lastOrderId}?accountId=${lastOrderAccountId}`)
+    navigate(`/order/detail/${lastOrderId}`)
   }
 
   return (

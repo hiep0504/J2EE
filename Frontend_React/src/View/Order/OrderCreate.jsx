@@ -2,9 +2,8 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { API_BASE, createEmptyItem, toCurrency } from './orderApi'
 
-function OrderCreate() {
+function OrderCreate({ user, authChecked }) {
   const navigate = useNavigate()
-  const [accountId, setAccountId] = useState('2')
   const [address, setAddress] = useState('')
   const [phone, setPhone] = useState('')
   const [provinces, setProvinces] = useState([])
@@ -19,6 +18,7 @@ function OrderCreate() {
   const [status, setStatus] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [paymentMethod, setPaymentMethod] = useState('COD') // 'COD' | 'VNPAY'
+  const accountId = user?.id
 
   useEffect(() => {
     loadOrderOptions()
@@ -70,8 +70,8 @@ function OrderCreate() {
   async function createOrder(event) {
     event.preventDefault()
 
-    if (!accountId.trim()) {
-      setStatus('Vui lòng nhập accountId')
+    if (!accountId) {
+      setStatus('Vui lòng đăng nhập để tạo đơn hàng')
       return
     }
     if (!address.trim()) {
@@ -142,7 +142,7 @@ function OrderCreate() {
 
       // Lưu thông tin đơn hàng cho trang kết quả thanh toán
       localStorage.setItem('lastOrderId', String(data.id))
-      localStorage.setItem('lastOrderAccountId', String(accountId || '2'))
+      localStorage.setItem('lastOrderAccountId', String(accountId))
       if (data.totalPrice !== undefined && data.totalPrice !== null) {
         localStorage.setItem('lastOrderTotal', String(data.totalPrice))
       }
@@ -206,11 +206,11 @@ function OrderCreate() {
   }
 
   function goHistory() {
-    navigate(`/order/history?accountId=${accountId}`)
+    navigate('/order/history')
   }
 
   function goDetail(orderId) {
-    navigate(`/order/detail/${orderId}?accountId=${accountId}`)
+    navigate(`/order/detail/${orderId}`)
   }
 
   async function payWithVnPay(orderFromParam) {
@@ -223,7 +223,7 @@ function OrderCreate() {
     try {
       // Luu lai thong tin don hang de trang ket qua co the dung
       localStorage.setItem('lastOrderId', String(order.id))
-      localStorage.setItem('lastOrderAccountId', String(accountId || '2'))
+      localStorage.setItem('lastOrderAccountId', String(accountId))
       if (order.totalPrice !== undefined && order.totalPrice !== null) {
         localStorage.setItem('lastOrderTotal', String(order.totalPrice))
       }
@@ -278,6 +278,20 @@ function OrderCreate() {
 
   const submitLabel = paymentMethod === 'VNPAY' ? 'Thanh toán qua VNPay' : 'Đặt hàng (COD)'
 
+  if (authChecked && !user) {
+    return (
+      <main className="page">
+        <section className="card shadow-lg border-0">
+          <h1 className="h4 mb-3">Tạo đơn hàng</h1>
+          <p className="text-muted mb-3">Vui lòng đăng nhập để tạo đơn hàng.</p>
+          <button type="button" className="primary-button btn btn-primary" onClick={() => navigate('/login')}>
+            Đi đến đăng nhập
+          </button>
+        </section>
+      </main>
+    )
+  }
+
   return (
     <main className="page">
       <section className="card shadow-lg border-0">
@@ -290,15 +304,11 @@ function OrderCreate() {
 
         <form onSubmit={createOrder} className="form-grid order-layout">
           <div className="order-main">
-            <label>
-              Account ID
-              <input
-                type="number"
-                min="1"
-                value={accountId}
-                onChange={(event) => setAccountId(event.target.value)}
-              />
-            </label>
+            {user && (
+              <p className="text-muted mb-2">
+                Đang đặt hàng với tài khoản: <strong>{user.username}</strong>
+              </p>
+            )}
 
             <label>
               Số điện thoại

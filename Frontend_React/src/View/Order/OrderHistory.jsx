@@ -1,24 +1,23 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { API_BASE, formatDate, toCurrency } from './orderApi'
 
-function OrderHistory() {
+function OrderHistory({ user, authChecked }) {
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
-  const [accountId, setAccountId] = useState(searchParams.get('accountId') || '2')
   const [orderHistory, setOrderHistory] = useState([])
   const [status, setStatus] = useState('')
+  const accountId = user?.id
 
   useEffect(() => {
     if (accountId) {
       loadOrderHistory(accountId)
     }
-  }, [])
+  }, [accountId])
 
   async function loadOrderHistory(inputAccountId) {
-    const value = (inputAccountId ?? accountId).trim()
+    const value = String(inputAccountId ?? accountId ?? '').trim()
     if (!value) {
-      setStatus('Vui lòng nhập accountId để xem lịch sử')
+      setStatus('Vui lòng đăng nhập để xem lịch sử đơn hàng')
       return
     }
 
@@ -41,7 +40,21 @@ function OrderHistory() {
   }
 
   function goDetail(orderId) {
-    navigate(`/order/detail/${orderId}?accountId=${accountId}`)
+    navigate(`/order/detail/${orderId}`)
+  }
+
+  if (authChecked && !user) {
+    return (
+      <main className="page">
+        <section className="card shadow-lg border-0">
+          <h1 className="h4 mb-3">Lịch sử đơn hàng</h1>
+          <p className="text-muted mb-3">Vui lòng đăng nhập để xem lịch sử đơn hàng.</p>
+          <button type="button" className="primary-button btn btn-primary" onClick={() => navigate('/login')}>
+            Đi đến đăng nhập
+          </button>
+        </section>
+      </main>
+    )
   }
 
   return (
@@ -55,14 +68,12 @@ function OrderHistory() {
         </div>
 
         <div className="media-row order-item-row mb-3">
-          <input
-            type="number"
-            min="1"
-            value={accountId}
-            onChange={(event) => setAccountId(event.target.value)}
-            placeholder="Nhập accountId"
-          />
-          <button type="button" className="primary-button btn btn-primary" onClick={() => loadOrderHistory(accountId)}>
+          {user && (
+            <p className="text-muted mb-0">
+              Tài khoản: <strong>{user.username}</strong>
+            </p>
+          )}
+          <button type="button" className="primary-button btn btn-primary" onClick={() => loadOrderHistory(String(accountId || ''))}>
             Xem lịch sử đơn hàng
           </button>
         </div>

@@ -12,5 +12,6 @@ public class AccountPurchasedProductResponse {
     private BigDecimal price;
     private String imageUrl;
     private LocalDateTime lastPurchasedAt;
+    private boolean canReview;
     private AccountOwnedReviewResponse review;
 }

@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
-import { getAllProducts } from '../services/productService';
+import { getAllCategories, getAllProducts } from '../services/productService';
 import './HomePage.css';
 
 function HomePage({ user }) {
   const [searchParams] = useSearchParams();
   const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [keyword, setKeyword] = useState('');
@@ -27,8 +28,18 @@ function HomePage({ user }) {
     }
   }
 
+  async function loadCategories() {
+    try {
+      const res = await getAllCategories();
+      setCategories(Array.isArray(res.data) ? res.data : []);
+    } catch {
+      setCategories([]);
+    }
+  }
+
   useEffect(() => {
     loadProducts();
+    loadCategories();
   }, []);
 
   useEffect(() => {
@@ -69,6 +80,39 @@ function HomePage({ user }) {
   }, [products, keyword, selectedCategoryId, sortMode]);
 
   const highlightProducts = visibleProducts.slice(0, 4);
+  const skeletonCards = Array.from({ length: 8 }, (_, index) => index);
+
+  function renderSkeletonCard() {
+    return (
+      <div className="skeleton-product-card">
+        <div className="skeleton skeleton-product-image" />
+        <div className="p-3 skeleton-grid">
+          <div className="skeleton skeleton-line skeleton-line--sm" style={{ width: '42%' }} />
+          <div className="skeleton skeleton-line" style={{ width: '78%' }} />
+          <div className="skeleton skeleton-line" style={{ width: '54%' }} />
+          <div className="skeleton skeleton-line skeleton-line--lg" style={{ width: '100%', marginTop: '4px' }} />
+        </div>
+      </div>
+    );
+  }
+
+  function renderToolbarSkeleton() {
+    return (
+      <section className="home-toolbar mb-4 skeleton-pulse" aria-busy="true" aria-label="Đang tải bộ lọc sản phẩm">
+        <div className="row g-2 align-items-center">
+          <div className="col-12 col-md-4">
+            <div className="skeleton" style={{ height: '44px', borderRadius: '12px' }} />
+          </div>
+          <div className="col-7 col-md-4">
+            <div className="skeleton" style={{ height: '44px', borderRadius: '12px' }} />
+          </div>
+          <div className="col-5 col-md-2 d-grid">
+            <div className="skeleton" style={{ height: '44px', borderRadius: '12px' }} />
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <main className="home-page container py-4 py-lg-5">
@@ -91,28 +135,74 @@ function HomePage({ user }) {
         </div>
       </section>
 
-      <section className="home-toolbar mb-4">
-        <div className="row g-2 align-items-center">
-          <div className="col-7 col-md-4">
-            <select
-              className="form-select home-toolbar__select"
-              value={sortMode}
-              onChange={(event) => setSortMode(event.target.value)}
-            >
-              <option value="newest">Mới nhất</option>
-              <option value="price-asc">Giá tăng dần</option>
-              <option value="price-desc">Giá giảm dần</option>
-            </select>
+      {loading ? (
+        renderToolbarSkeleton()
+      ) : (
+        <section className="home-toolbar mb-4">
+          <div className="row g-2 align-items-center">
+            <div className="col-12 col-md-4">
+              <select
+                className="form-select home-toolbar__select"
+                value={selectedCategoryId}
+                onChange={(event) => setSelectedCategoryId(event.target.value)}
+              >
+                <option value="">Tất cả danh mục</option>
+                {categories.map((category) => (
+                  <option key={category.id} value={String(category.id)}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="col-7 col-md-4">
+              <select
+                className="form-select home-toolbar__select"
+                value={sortMode}
+                onChange={(event) => setSortMode(event.target.value)}
+              >
+                <option value="newest">Mới nhất</option>
+                <option value="price-asc">Giá tăng dần</option>
+                <option value="price-desc">Giá giảm dần</option>
+              </select>
+            </div>
+            <div className="col-5 col-md-2 d-grid">
+              <button type="button" className="btn home-toolbar__reload" onClick={loadProducts}>
+                Tải lại
+              </button>
+            </div>
           </div>
-          <div className="col-5 col-md-2 d-grid">
-            <button type="button" className="btn home-toolbar__reload" onClick={loadProducts}>
-              Tải lại
-            </button>
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
 
-      {loading && <p className="text-center py-5 text-muted">Đang tải sản phẩm...</p>}
+      {loading && (
+        <>
+          <section className="home-highlight mb-4 mb-lg-5">
+            <h2 className="home-section-title">Gợi ý nổi bật</h2>
+            <div className="row row-cols-1 row-cols-sm-2 row-cols-lg-4 g-3">
+              {skeletonCards.slice(0, 4).map((index) => (
+                <div className="col" key={`hero-skeleton-${index}`}>
+                  {renderSkeletonCard()}
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section>
+            <div className="d-flex justify-content-between align-items-center mb-3">
+              <h2 className="home-section-title mb-0">Tất cả sản phẩm</h2>
+              <div className="skeleton" style={{ width: '110px', height: '18px', borderRadius: '999px' }} />
+            </div>
+
+            <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3">
+              {skeletonCards.map((index) => (
+                <div className="col" key={`grid-skeleton-${index}`}>
+                  {renderSkeletonCard()}
+                </div>
+              ))}
+            </div>
+          </section>
+        </>
+      )}
 
       {!loading && error && (
         <div className="home-empty text-center py-5">
