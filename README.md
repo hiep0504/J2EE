@@ -55,3 +55,50 @@ Người dùng → React UI → gọi API → Spring Boot xử lý → MySQL
 - MySQL
 - React
 
+## Chatbot tu van san pham (RAG + Vector DB)
+
+He thong da bo sung chatbot tu van san pham cho khach hang tai trang `/support-chat`.
+
+### Kien truc
+
+React Chat UI
+-> Spring Boot API (`/api/chat/rag/ask`)
+-> Embedding (OpenAI hoac fallback local)
+-> Vector DB MySQL (`rag_product_vectors`)
+-> Retrieval top-k
+-> LLM sinh cau tra loi
+
+### Vector DB
+
+Bang duoc tao tu dong boi JPA:
+
+- `rag_product_vectors`
+       - `product_id` (unique)
+       - `document_hash`
+       - `embedding_data`
+       - `updated_at`
+
+### Cac API chinh
+
+- `POST /api/chat/rag/ask`
+- `POST /api/chat/rag/index/rebuild`
+
+Request mau cho ask:
+
+```json
+{
+       "question": "giay futsal duoi 2 trieu size 42"
+}
+```
+
+### Cau hinh
+
+Trong `Backend_J2EE/src/main/resources/application.properties`:
+
+- `app.rag.retrieval.top-k=5`
+- `app.rag.embedding.provider=openai`
+- `app.rag.chat.provider=openai`
+- `app.rag.openai.api-key=${OPENAI_API_KEY:}`
+
+Neu khong co `OPENAI_API_KEY`, he thong van hoat dong bang local fallback embedding + fallback answer.
+

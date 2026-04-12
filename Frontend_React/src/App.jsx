@@ -15,6 +15,7 @@ import CartPage from './pages/CartPage';
 import CartCheckoutPage from './pages/CartCheckoutPage';
 import ProductDetailPage from './pages/ProductDetailPage';
 import SupportChatPage from './pages/SupportChatPage';
+import AiProductChatPage from './pages/AiProductChatPage';
 
 // Features
 import ProductReview from './View/Product/ProductReview';
@@ -93,7 +94,12 @@ function App() {
           {/* Product */}
           <Route path="/products/:productId" element={<ProductDetailPage user={user} authChecked={authChecked} />} />
           <Route path="/support-chat" element={<SupportChatPage />} />
+
+          <Route path="/ai-chat" element={<AiProductChatPage />} />
+
+
           <Route path="/product/review" element={<ProductReview user={user} authChecked={authChecked} />} />
+
 
           {/* Order */}
           <Route path="/order/create" element={<OrderCreate user={user} authChecked={authChecked} />} />
