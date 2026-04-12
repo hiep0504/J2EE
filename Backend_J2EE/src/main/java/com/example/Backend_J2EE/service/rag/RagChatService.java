@@ -1,6 +1,7 @@
 package com.example.Backend_J2EE.service.rag;
 
 import com.example.Backend_J2EE.dto.rag.RagChatResponse;
+import com.example.Backend_J2EE.dto.rag.RagChatTurn;
 import com.example.Backend_J2EE.dto.rag.RagProductSuggestion;
 import com.example.Backend_J2EE.entity.Product;
 import com.example.Backend_J2EE.entity.ProductSize;
@@ -27,19 +28,25 @@ public class RagChatService {
 	private final RagVectorStoreService ragVectorStoreService;
 	private final LlmAnswerService llmAnswerService;
 	private final int topK;
+	private final int contextWindowTurns;
+	private final int contextWindowMaxHistoryChars;
 
 	public RagChatService(
 			ProductRepository productRepository,
 			ReviewRepository reviewRepository,
 			RagVectorStoreService ragVectorStoreService,
 			LlmAnswerService llmAnswerService,
-			@Value("${app.rag.retrieval.top-k:5}") int topK
+			@Value("${app.rag.retrieval.top-k:5}") int topK,
+			@Value("${app.rag.chat.context-window-turns:8}") int contextWindowTurns,
+			@Value("${app.rag.chat.context-window-max-history-chars:6000}") int contextWindowMaxHistoryChars
 	) {
 		this.productRepository = productRepository;
 		this.reviewRepository = reviewRepository;
 		this.ragVectorStoreService = ragVectorStoreService;
 		this.llmAnswerService = llmAnswerService;
 		this.topK = topK;
+		this.contextWindowTurns = Math.max(0, contextWindowTurns);
+		this.contextWindowMaxHistoryChars = Math.max(0, contextWindowMaxHistoryChars);
 	}
 
 	@Transactional
@@ -50,14 +57,27 @@ public class RagChatService {
 	}
 
 	@Transactional
-	public RagChatResponse ask(String question) {
+	public RagChatResponse ask(String question, List<RagChatTurn> history, String focusProductName) {
 		List<RagProductDocument> docs = buildDocuments();
 		if (docs.isEmpty()) {
 			return new RagChatResponse("He thong chua co du lieu san pham de tu van.", List.of());
 		}
 
-		ragVectorStoreService.upsertDocuments(docs);
-		List<RagVectorStoreService.RagProductHit> hits = ragVectorStoreService.search(question, docs, topK);
+		if (!ragVectorStoreService.hasAnyVectorForDocuments(docs)) {
+			return new RagChatResponse(
+					"Chi muc vector chua san sang. Vui long rebuild index (POST /api/chat/rag/index/rebuild) hoac doi job nen chay.",
+					List.of()
+			);
+		}
+
+		String searchQuery = buildSearchQuery(question, history, focusProductName);
+		List<RagVectorStoreService.RagProductHit> hits = ragVectorStoreService.search(searchQuery, docs, topK);
+		if (hits.isEmpty()) {
+			return new RagChatResponse(
+					"Khong tim thay san pham phu hop trong chi muc vector hien tai. Ban co the rebuild index de dong bo du lieu moi.",
+					List.of()
+			);
+		}
 
 		List<RagProductSuggestion> suggestions = hits.stream()
 				.limit(3)
@@ -65,8 +85,88 @@ public class RagChatService {
 				.toList();
 
 		String context = buildContext(hits);
-		String answer = llmAnswerService.generateAnswer(question, context, suggestions);
+		List<RagChatTurn> normalizedHistory = normalizeHistory(history);
+		String answer = llmAnswerService.generateAnswer(question, context, suggestions, normalizedHistory, normalizeFocusProductName(focusProductName));
 		return new RagChatResponse(answer, suggestions);
+	}
+
+	private String buildSearchQuery(String question, List<RagChatTurn> history, String focusProductName) {
+		StringBuilder query = new StringBuilder(question == null ? "" : question.trim());
+		String normalizedFocus = normalizeFocusProductName(focusProductName);
+		if (!normalizedFocus.isEmpty()) {
+			query.append(' ').append(normalizedFocus);
+		}
+
+		if (history != null) {
+			for (int i = history.size() - 1; i >= 0; i--) {
+				RagChatTurn turn = history.get(i);
+				if (turn == null || turn.getContent() == null) {
+					continue;
+				}
+				String content = turn.getContent().trim();
+				if (content.isEmpty()) {
+					continue;
+				}
+				query.append(' ').append(content);
+				break;
+			}
+		}
+
+		return query.toString().trim();
+	}
+
+	private String normalizeFocusProductName(String focusProductName) {
+		return focusProductName == null ? "" : focusProductName.trim();
+	}
+
+	private List<RagChatTurn> normalizeHistory(List<RagChatTurn> history) {
+		if (history == null || history.isEmpty() || contextWindowTurns == 0) {
+			return List.of();
+		}
+
+		List<RagChatTurn> cleaned = history.stream()
+				.filter(item -> item != null && item.getRole() != null && item.getContent() != null)
+				.map(item -> {
+					RagChatTurn turn = new RagChatTurn();
+					String role = item.getRole().trim().toLowerCase(Locale.ROOT);
+					if (!role.equals("user") && !role.equals("assistant")) {
+						return null;
+					}
+					String content = item.getContent().trim();
+					if (content.isEmpty()) {
+						return null;
+					}
+					turn.setRole(role);
+					turn.setContent(content);
+					return turn;
+				})
+				.filter(Objects::nonNull)
+				.toList();
+
+		if (cleaned.size() <= contextWindowTurns) {
+			return trimHistoryByCharBudget(cleaned);
+		}
+
+		return trimHistoryByCharBudget(cleaned.subList(cleaned.size() - contextWindowTurns, cleaned.size()));
+	}
+
+	private List<RagChatTurn> trimHistoryByCharBudget(List<RagChatTurn> history) {
+		if (history.isEmpty() || contextWindowMaxHistoryChars == 0) {
+			return List.of();
+		}
+
+		int usedChars = 0;
+		List<RagChatTurn> trimmed = new ArrayList<>();
+		for (int i = history.size() - 1; i >= 0; i--) {
+			RagChatTurn turn = history.get(i);
+			int turnChars = turn.getRole().length() + turn.getContent().length() + 16;
+			if (!trimmed.isEmpty() && usedChars + turnChars > contextWindowMaxHistoryChars) {
+				break;
+			}
+			usedChars += turnChars;
+			trimmed.add(0, turn);
+		}
+		return trimmed;
 	}
 
 	private List<RagProductDocument> buildDocuments() {

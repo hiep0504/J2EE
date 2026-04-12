@@ -29,7 +29,11 @@ public class RagChatController {
 	@PostMapping("/ask")
 	public ResponseEntity<?> ask(@Valid @RequestBody RagChatRequest request) {
 		try {
-			RagChatResponse response = ragChatService.ask(request.getQuestion());
+			RagChatResponse response = ragChatService.ask(
+					request.getQuestion(),
+					request.getHistory(),
+					request.getFocusProductName()
+			);
 			return ResponseEntity.ok(response);
 		} catch (HttpClientErrorException.TooManyRequests ex) {
 			return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
