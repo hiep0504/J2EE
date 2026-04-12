@@ -55,6 +55,21 @@ Người dùng → React UI → gọi API → Spring Boot xử lý → MySQL
 - MySQL
 - React
 
+### Dat lai mat khau qua Gmail
+
+He thong da them luong quen mat khau bang Gmail:
+
+- `POST /api/auth/forgot-password` gui email chua link dat lai mat khau
+- `POST /api/auth/reset-password` cap nhat mat khau moi bang token trong email
+
+Can cau hinh cac bien moi truong sau cho backend:
+
+- `GMAIL_USERNAME`
+- `GMAIL_APP_PASSWORD`
+- `FRONTEND_URL` neu frontend khong chay tai `http://localhost:5173`
+
+Tren frontend, nguoi dung co the vao `/login`, chon `Quen mat khau?`, nhap email va mo link trong Gmail de dat lai mat khau.
+
 ## Chatbot tu van san pham (RAG + Vector DB)
 
 He thong da bo sung chatbot tu van san pham cho khach hang tai trang `/support-chat`.

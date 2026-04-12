@@ -81,6 +81,11 @@ function LoginPage({ onLoggedIn }) {
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Nhập mật khẩu"
           />
+          <div className="mt-2 text-end">
+            <Link to="/forgot-password" className="btn btn-link p-0 text-decoration-none">
+              Quên mật khẩu?
+            </Link>
+          </div>
         </label>
 
         <button className="btn btn-dark mt-3" type="submit" disabled={submitting}>

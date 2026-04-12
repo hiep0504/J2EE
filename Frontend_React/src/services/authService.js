@@ -12,6 +12,14 @@ export function loginWithGoogle(payload) {
   return apiClient.post('/auth/google', payload)
 }
 
+export function requestPasswordReset(payload) {
+  return apiClient.post('/auth/forgot-password', payload)
+}
+
+export function resetPassword(payload) {
+  return apiClient.post('/auth/reset-password', payload)
+}
+
 export function logout() {
   return apiClient.post('/auth/logout')
 }

@@ -9,7 +9,9 @@ import Footer from './components/Footer';
 // Pages
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import RegisterPage from './pages/RegisterPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 import AccountPage from './pages/AccountPage';
 import CartPage from './pages/CartPage';
 import CartCheckoutPage from './pages/CartCheckoutPage';
@@ -85,6 +87,8 @@ function App() {
 
           {/* Auth */}
           <Route path="/login" element={<LoginPage onLoggedIn={refreshMe} />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route
             path="/account"

@@ -1,9 +1,12 @@
 package com.example.Backend_J2EE.controller;
 
 import com.example.Backend_J2EE.dto.account.AccountProfileResponse;
+import com.example.Backend_J2EE.dto.auth.AuthMessageResponse;
+import com.example.Backend_J2EE.dto.auth.ForgotPasswordRequest;
 import com.example.Backend_J2EE.dto.auth.GoogleLoginRequest;
 import com.example.Backend_J2EE.dto.auth.LoginRequest;
 import com.example.Backend_J2EE.dto.auth.RegisterRequest;
+import com.example.Backend_J2EE.dto.auth.ResetPasswordRequest;
 import com.example.Backend_J2EE.entity.Account;
 import com.example.Backend_J2EE.service.AuthService;
 import com.example.Backend_J2EE.service.CartService;
@@ -54,6 +57,16 @@ public class AuthController {
         cartService.mergeSessionCartToDatabase(account.getId(), session);
 
         return authService.toProfile(account);
+    }
+
+    @PostMapping("/forgot-password")
+    public AuthMessageResponse forgotPassword(@RequestBody ForgotPasswordRequest request) {
+        return authService.requestPasswordReset(request);
+    }
+
+    @PostMapping("/reset-password")
+    public AuthMessageResponse resetPassword(@RequestBody ResetPasswordRequest request) {
+        return authService.resetPassword(request);
     }
 
     @PostMapping("/logout")

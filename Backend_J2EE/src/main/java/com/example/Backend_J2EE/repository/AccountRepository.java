@@ -13,9 +13,15 @@ public interface AccountRepository extends JpaRepository<Account, Integer> {
 
     boolean existsByEmail(String email);
 
+    boolean existsByEmailIgnoreCase(String email);
+
     Optional<Account> findByEmail(String email);
 
+    Optional<Account> findByEmailIgnoreCase(String email);
+
     Optional<Account> findByGoogleId(String googleId);
+
+    Optional<Account> findByPasswordResetTokenHashAndPasswordResetTokenExpiresAtAfter(String passwordResetTokenHash, java.time.LocalDateTime passwordResetTokenExpiresAt);
 
     Optional<Account> findByUsernameOrEmail(String username, String email);
 }

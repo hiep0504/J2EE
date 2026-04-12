@@ -50,6 +50,12 @@ public class Account {
     @Column(name = "avatar_url", length = 500)
     private String avatarUrl;
 
+    @Column(name = "password_reset_token_hash", length = 64)
+    private String passwordResetTokenHash;
+
+    @Column(name = "password_reset_token_expires_at")
+    private LocalDateTime passwordResetTokenExpiresAt;
+
     @Column(name = "is_locked")
     @Builder.Default
     private Boolean locked = false;
