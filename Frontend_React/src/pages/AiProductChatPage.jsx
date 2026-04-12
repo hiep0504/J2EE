@@ -17,6 +17,16 @@ function makeBotMessage(text, products = []) {
   }
 }
 
+function buildHistoryWindow(messages, maxTurns = 8) {
+  return messages
+    .filter((item) => item && item.text && (item.role === 'user' || item.role === 'bot'))
+    .map((item) => ({
+      role: item.role === 'bot' ? 'assistant' : 'user',
+      content: item.text,
+    }))
+    .slice(-Math.max(0, maxTurns))
+}
+
 function AiProductChatPage() {
   const [messages, setMessages] = useState([
     makeBotMessage('Xin chao! Minh co the tu van giay da bong theo gia, loai san, size va thuong hieu.'),
@@ -40,6 +50,7 @@ function AiProductChatPage() {
     }
 
     const question = text.trim()
+    const history = buildHistoryWindow(messages, 8)
     const userMessage = {
       id: `user-${Date.now()}`,
       role: 'user',
@@ -53,7 +64,7 @@ function AiProductChatPage() {
     setBusy(true)
 
     try {
-      const res = await askRag(question)
+      const res = await askRag(question, history)
       const answer = res?.data?.answer || 'Minh chua the tra loi luc nay. Ban thu lai nhe.'
       const products = Array.isArray(res?.data?.products) ? res.data.products : []
       setMessages((prev) => [...prev, makeBotMessage(answer, products)])

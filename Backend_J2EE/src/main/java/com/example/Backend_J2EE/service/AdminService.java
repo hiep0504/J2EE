@@ -3,6 +3,7 @@ package com.example.Backend_J2EE.service;
 import com.example.Backend_J2EE.dto.admin.*;
 import com.example.Backend_J2EE.entity.*;
 import com.example.Backend_J2EE.repository.*;
+import com.example.Backend_J2EE.service.rag.RagIndexMaintenanceService;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,6 +34,7 @@ public class AdminService {
     private final OrderRepository orderRepository;
     private final AccountRepository accountRepository;
     private final ReviewRepository reviewRepository;
+    private final RagIndexMaintenanceService ragIndexMaintenanceService;
 
     public AdminService(
             ProductRepository productRepository,
@@ -42,7 +44,8 @@ public class AdminService {
             SizeRepository sizeRepository,
             OrderRepository orderRepository,
             AccountRepository accountRepository,
-            ReviewRepository reviewRepository
+                ReviewRepository reviewRepository,
+                RagIndexMaintenanceService ragIndexMaintenanceService
     ) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
@@ -52,6 +55,7 @@ public class AdminService {
         this.orderRepository = orderRepository;
         this.accountRepository = accountRepository;
         this.reviewRepository = reviewRepository;
+        this.ragIndexMaintenanceService = ragIndexMaintenanceService;
     }
 
     public AdminPageResponse<AdminProductResponse> getProducts(String keyword, Integer categoryId, int page, int size) {
@@ -89,6 +93,7 @@ public class AdminService {
 
         Product refreshed = productRepository.findById(saved.getId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Khong tai lai duoc san pham"));
+        ragIndexMaintenanceService.markDirty();
         return toProductResponse(refreshed);
     }
 
@@ -112,6 +117,7 @@ public class AdminService {
 
         Product refreshed = productRepository.findById(product.getId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Khong tai lai duoc san pham"));
+        ragIndexMaintenanceService.markDirty();
         return toProductResponse(refreshed);
     }
 
@@ -120,6 +126,7 @@ public class AdminService {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Khong tim thay san pham"));
         productRepository.delete(product);
+        ragIndexMaintenanceService.markDirty();
     }
 
     public AdminPageResponse<AdminCategoryResponse> getCategories(String keyword, int page, int size) {

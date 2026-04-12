@@ -28,11 +28,14 @@ public class RagVectorStoreService {
 
     @Transactional
     public void upsertDocuments(List<RagProductDocument> documents) {
+        List<Integer> activeProductIds = new ArrayList<>();
         for (RagProductDocument document : documents) {
             Integer productId = document.product().getId();
             if (productId == null) {
                 continue;
             }
+
+            activeProductIds.add(productId);
 
             String hash = sha256(document.document());
             RagProductVector existing = vectorRepository.findByProductId(productId).orElse(null);
@@ -48,6 +51,28 @@ public class RagVectorStoreService {
             vector.setEmbeddingData(encoded);
             vectorRepository.save(vector);
         }
+
+        if (activeProductIds.isEmpty()) {
+            vectorRepository.deleteAll();
+            return;
+        }
+
+        vectorRepository.deleteByProductIdNotIn(activeProductIds.stream().distinct().toList());
+    }
+
+    @Transactional(readOnly = true)
+    public boolean hasAnyVectorForDocuments(List<RagProductDocument> documents) {
+        List<Integer> productIds = documents.stream()
+                .map(doc -> doc.product().getId())
+                .filter(id -> id != null)
+                .distinct()
+                .toList();
+
+        if (productIds.isEmpty()) {
+            return false;
+        }
+
+        return vectorRepository.existsByProductIdIn(productIds);
     }
 
     @Transactional(readOnly = true)

@@ -11,4 +11,8 @@ public interface RagProductVectorRepository extends JpaRepository<RagProductVect
     Optional<RagProductVector> findByProductId(Integer productId);
 
     List<RagProductVector> findByProductIdIn(List<Integer> productIds);
+
+    boolean existsByProductIdIn(List<Integer> productIds);
+
+    void deleteByProductIdNotIn(List<Integer> productIds);
 }

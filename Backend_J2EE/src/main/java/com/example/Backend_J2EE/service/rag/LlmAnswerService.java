@@ -1,5 +1,6 @@
 package com.example.Backend_J2EE.service.rag;
 
+import com.example.Backend_J2EE.dto.rag.RagChatTurn;
 import com.example.Backend_J2EE.dto.rag.RagProductSuggestion;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -7,6 +8,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
 
 import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -40,13 +42,19 @@ public class LlmAnswerService {
         this.restClient = RestClient.builder().build();
     }
 
-    public String generateAnswer(String question, String productsContext, List<RagProductSuggestion> products) {
+    public String generateAnswer(
+            String question,
+            String productsContext,
+            List<RagProductSuggestion> products,
+            List<RagChatTurn> history,
+            String focusProductName
+    ) {
         if ("openai".equalsIgnoreCase(provider) && StringUtils.hasText(ragApiKey)) {
-            return callOpenAi(question, productsContext);
+            return callOpenAi(question, productsContext, history, focusProductName);
         }
 
         if ("gemini".equalsIgnoreCase(provider) && StringUtils.hasText(ragApiKey)) {
-            return callGemini(question, productsContext);
+            return callGemini(question, productsContext, history, focusProductName);
         }
 
         if (!StringUtils.hasText(ragApiKey)) {
@@ -56,14 +64,23 @@ public class LlmAnswerService {
         throw new IllegalStateException("Unsupported RAG provider: " + provider);
     }
 
-    private String callOpenAi(String question, String productsContext) {
+    private String callOpenAi(String question, String productsContext, List<RagChatTurn> history, String focusProductName) {
         Map<String, Object> payload = new HashMap<>();
         payload.put("model", model);
         payload.put("temperature", 0.2);
-        payload.put("messages", List.of(
-                Map.of("role", "system", "content", SYSTEM_PROMPT),
-                Map.of("role", "user", "content", "Du lieu:\n" + productsContext + "\n\nCau hoi:\n" + question)
-        ));
+        List<Map<String, Object>> messages = new ArrayList<>();
+        messages.add(Map.of("role", "system", "content", SYSTEM_PROMPT));
+        messages.add(Map.of("role", "system", "content", "Ngu canh san pham hien tai:\n" + productsContext));
+        if (StringUtils.hasText(focusProductName)) {
+            messages.add(Map.of("role", "system", "content", "San pham dang duoc hoi den: " + focusProductName.trim()));
+        }
+        if (history != null) {
+            for (RagChatTurn turn : history) {
+                messages.add(Map.of("role", turn.getRole(), "content", turn.getContent()));
+            }
+        }
+        messages.add(Map.of("role", "user", "content", question));
+        payload.put("messages", messages);
 
         Map<?, ?> response = restClient.post()
             .uri(ragBaseUrl + "/chat/completions")
@@ -80,15 +97,28 @@ public class LlmAnswerService {
         return answer;
     }
 
-    private String callGemini(String question, String productsContext) {
+    private String callGemini(String question, String productsContext, List<RagChatTurn> history, String focusProductName) {
         Map<String, Object> payload = new HashMap<>();
         payload.put("systemInstruction", Map.of("parts", List.of(Map.of("text", SYSTEM_PROMPT))));
-        payload.put("contents", List.of(
-                Map.of(
-                        "role", "user",
-                        "parts", List.of(Map.of("text", "Du lieu:\n" + productsContext + "\n\nCau hoi:\n" + question))
-                )
+        List<Map<String, Object>> contents = new ArrayList<>();
+        contents.add(Map.of(
+                "role", "user",
+                "parts", List.of(Map.of("text", "Ngu canh san pham hien tai:\n" + productsContext))
         ));
+        if (StringUtils.hasText(focusProductName)) {
+            contents.add(Map.of(
+                    "role", "user",
+                    "parts", List.of(Map.of("text", "San pham dang duoc hoi den: " + focusProductName.trim()))
+            ));
+        }
+        if (history != null) {
+            for (RagChatTurn turn : history) {
+                String role = "assistant".equals(turn.getRole()) ? "model" : "user";
+                contents.add(Map.of("role", role, "parts", List.of(Map.of("text", turn.getContent()))));
+            }
+        }
+        contents.add(Map.of("role", "user", "parts", List.of(Map.of("text", question))));
+        payload.put("contents", contents);
         payload.put("generationConfig", Map.of("temperature", 0.2));
 
         Map<?, ?> response = restClient.post()
