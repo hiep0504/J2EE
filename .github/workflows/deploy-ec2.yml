@@ -60,7 +60,7 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           port: ${{ secrets.EC2_PORT || 22 }}
           source: docker-compose.ec2.yml
-          target: /opt/j2ee
+          target: /home/${{ secrets.EC2_USER }}/j2ee
 
       - name: Deploy on EC2
         uses: appleboy/ssh-action@v1.2.0
@@ -77,10 +77,9 @@ jobs:
           envs: DOCKERHUB_USERNAME,DOCKERHUB_TOKEN,IMAGE_TAG,EC2_ENV_FILE
           script: |
             set -e
-            sudo mkdir -p /opt/j2ee
-            sudo chown -R $USER:$USER /opt/j2ee
+            mkdir -p /home/$USER/j2ee
 
-            cd /opt/j2ee
+            cd /home/$USER/j2ee
             mv docker-compose.ec2.yml docker-compose.yml
 
             printf '%s\n' "$EC2_ENV_FILE" > .env
