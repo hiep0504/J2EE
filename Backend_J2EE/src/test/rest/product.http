@@ -1,0 +1,5 @@
+### Tải extension REST Client rồi ấn send request nó sẽ trả ra response cho mình 
+
+### GET all products
+GET http://localhost:8080/api/products
+Accept: application/json

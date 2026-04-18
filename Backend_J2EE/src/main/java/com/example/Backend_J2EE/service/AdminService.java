@@ -1,0 +1,788 @@
+package com.example.Backend_J2EE.service;
+
+import com.example.Backend_J2EE.dto.admin.*;
+import com.example.Backend_J2EE.entity.*;
+import com.example.Backend_J2EE.repository.*;
+import com.example.Backend_J2EE.service.rag.RagIndexMaintenanceService;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDate;
+import java.time.YearMonth;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.HashSet;
+import java.util.Set;
+
+@Service
+public class AdminService {
+
+    private final ProductRepository productRepository;
+    private final CategoryRepository categoryRepository;
+    private final ProductImageRepository productImageRepository;
+    private final ProductSizeRepository productSizeRepository;
+    private final SizeRepository sizeRepository;
+    private final OrderRepository orderRepository;
+    private final AccountRepository accountRepository;
+    private final ReviewRepository reviewRepository;
+    private final RagIndexMaintenanceService ragIndexMaintenanceService;
+
+    public AdminService(
+            ProductRepository productRepository,
+            CategoryRepository categoryRepository,
+            ProductImageRepository productImageRepository,
+            ProductSizeRepository productSizeRepository,
+            SizeRepository sizeRepository,
+            OrderRepository orderRepository,
+            AccountRepository accountRepository,
+                ReviewRepository reviewRepository,
+                RagIndexMaintenanceService ragIndexMaintenanceService
+    ) {
+        this.productRepository = productRepository;
+        this.categoryRepository = categoryRepository;
+        this.productImageRepository = productImageRepository;
+        this.productSizeRepository = productSizeRepository;
+        this.sizeRepository = sizeRepository;
+        this.orderRepository = orderRepository;
+        this.accountRepository = accountRepository;
+        this.reviewRepository = reviewRepository;
+        this.ragIndexMaintenanceService = ragIndexMaintenanceService;
+    }
+
+    public AdminPageResponse<AdminProductResponse> getProducts(String keyword, Integer categoryId, int page, int size) {
+        List<Product> all = productRepository.findAllByOrderByCreatedAtDesc();
+        String normalized = normalize(keyword);
+
+        List<AdminProductResponse> mapped = all.stream()
+                .filter(product -> categoryId == null || (product.getCategory() != null && Objects.equals(product.getCategory().getId(), categoryId)))
+                .filter(product -> normalized.isBlank()
+                        || normalize(product.getName()).contains(normalized)
+                        || normalize(product.getDescription()).contains(normalized))
+                .map(this::toProductResponse)
+                .toList();
+
+        return paginate(mapped, page, size);
+    }
+
+    @Transactional
+    public AdminProductResponse createProduct(AdminProductRequest request) {
+        validateProductRequest(request);
+
+        Category category = findCategoryOrThrow(request.getCategoryId());
+
+        Product product = Product.builder()
+                .name(request.getName().trim())
+                .price(request.getPrice())
+                .description(request.getDescription())
+                .image(request.getImage())
+                .category(category)
+                .build();
+
+        Product saved = productRepository.save(product);
+        syncProductImages(saved, request.getImages());
+        syncProductSizes(saved, request.getSizes());
+
+        Product refreshed = productRepository.findById(saved.getId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Khong tai lai duoc san pham"));
+        ragIndexMaintenanceService.markDirty();
+        return toProductResponse(refreshed);
+    }
+
+    @Transactional
+    public AdminProductResponse updateProduct(Integer productId, AdminProductRequest request) {
+        validateProductRequest(request);
+
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Khong tim thay san pham"));
+        Category category = findCategoryOrThrow(request.getCategoryId());
+
+        product.setName(request.getName().trim());
+        product.setPrice(request.getPrice());
+        product.setDescription(request.getDescription());
+        product.setImage(request.getImage());
+        product.setCategory(category);
+
+        productRepository.save(product);
+        syncProductImages(product, request.getImages());
+        syncProductSizes(product, request.getSizes());
+
+        Product refreshed = productRepository.findById(product.getId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Khong tai lai duoc san pham"));
+        ragIndexMaintenanceService.markDirty();
+        return toProductResponse(refreshed);
+    }
+
+    @Transactional
+    public void deleteProduct(Integer productId) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Khong tim thay san pham"));
+        productRepository.delete(product);
+        ragIndexMaintenanceService.markDirty();
+    }
+
+    public AdminPageResponse<AdminCategoryResponse> getCategories(String keyword, int page, int size) {
+        String normalized = normalize(keyword);
+        List<AdminCategoryResponse> items = categoryRepository.findAll().stream()
+                .sorted(Comparator.comparing(Category::getId).reversed())
+                .filter(category -> normalized.isBlank() || normalize(category.getName()).contains(normalized))
+                .map(category -> new AdminCategoryResponse(
+                        category.getId(),
+                        category.getName(),
+                        category.getDescription(),
+                        category.getProducts() != null ? category.getProducts().size() : 0
+                ))
+                .toList();
+
+        return paginate(items, page, size);
+    }
+
+    public AdminCategoryResponse createCategory(AdminCategoryRequest request) {
+        validateCategoryRequest(request);
+
+        String name = request.getName().trim();
+        if (categoryRepository.existsByName(name)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Danh muc da ton tai");
+        }
+
+        Category saved = categoryRepository.save(Category.builder()
+                .name(name)
+                .description(request.getDescription())
+                .build());
+
+        return new AdminCategoryResponse(saved.getId(), saved.getName(), saved.getDescription(), 0);
+    }
+
+    public List<AdminSizeResponse> getSizes() {
+        return sizeRepository.findAll().stream()
+                .sorted(Comparator.comparing(Size::getId))
+                .map(size -> new AdminSizeResponse(size.getId(), size.getSizeName()))
+                .toList();
+    }
+
+    public AdminCategoryResponse updateCategory(Integer categoryId, AdminCategoryRequest request) {
+        validateCategoryRequest(request);
+
+        Category category = findCategoryOrThrow(categoryId);
+        String name = request.getName().trim();
+
+        if (!name.equals(category.getName()) && categoryRepository.existsByName(name)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Danh muc da ton tai");
+        }
+
+        category.setName(name);
+        category.setDescription(request.getDescription());
+        Category saved = categoryRepository.save(category);
+
+        return new AdminCategoryResponse(
+                saved.getId(),
+                saved.getName(),
+                saved.getDescription(),
+                saved.getProducts() != null ? saved.getProducts().size() : 0
+        );
+    }
+
+    public void deleteCategory(Integer categoryId) {
+        Category category = findCategoryOrThrow(categoryId);
+        if (category.getProducts() != null && !category.getProducts().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Khong the xoa danh muc dang co san pham");
+        }
+        categoryRepository.delete(category);
+    }
+
+    public AdminPageResponse<AdminOrderResponse> getOrders(String keyword, String status, int page, int size) {
+        String normalizedKeyword = normalize(keyword);
+        String normalizedStatus = normalize(status);
+
+        List<AdminOrderResponse> items = orderRepository.findAllByOrderByOrderDateDesc().stream()
+                .filter(order -> normalizedStatus.isBlank() || normalize(order.getStatus() != null ? order.getStatus().name() : "").equals(normalizedStatus))
+                .filter(order -> {
+                    if (normalizedKeyword.isBlank()) {
+                        return true;
+                    }
+                    String orderIdText = String.valueOf(order.getId());
+                    String username = order.getAccount() != null ? normalize(order.getAccount().getUsername()) : "";
+                    String phone = normalize(order.getPhone());
+                    return orderIdText.contains(normalizedKeyword) || username.contains(normalizedKeyword) || phone.contains(normalizedKeyword);
+                })
+                .map(this::toOrderResponse)
+                .toList();
+
+        return paginate(items, page, size);
+    }
+
+    public AdminOrderDetailResponse getOrderDetail(Integer orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Khong tim thay don hang"));
+
+        List<AdminOrderItemResponse> items = order.getOrderDetails() == null ? List.of() : order.getOrderDetails().stream()
+                .map(detail -> {
+                    ProductSize ps = detail.getProductSize();
+                    BigDecimal lineTotal = detail.getPrice().multiply(BigDecimal.valueOf(detail.getQuantity()));
+                    return new AdminOrderItemResponse(
+                            detail.getId(),
+                            ps != null ? ps.getId() : null,
+                            ps != null && ps.getProduct() != null ? ps.getProduct().getName() : null,
+                            ps != null && ps.getProduct() != null ? resolveProductImage(ps.getProduct()) : "",
+                            ps != null && ps.getSize() != null ? ps.getSize().getSizeName() : null,
+                            detail.getQuantity(),
+                            detail.getPrice(),
+                            lineTotal
+                    );
+                })
+                .toList();
+
+        return new AdminOrderDetailResponse(
+                order.getId(),
+                order.getAccount() != null ? order.getAccount().getId() : null,
+                order.getAccount() != null ? order.getAccount().getUsername() : null,
+                order.getTotalPrice(),
+                order.getStatus() != null ? order.getStatus().name() : null,
+                order.getAddress(),
+                order.getPhone(),
+                order.getOrderDate(),
+                items
+        );
+    }
+
+    public AdminOrderResponse updateOrderStatus(Integer orderId, AdminUpdateOrderStatusRequest request) {
+        if (request == null || request.getStatus() == null || request.getStatus().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Trang thai la bat buoc");
+        }
+
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Khong tim thay don hang"));
+
+        order.setStatus(parseOrderStatus(request.getStatus()));
+        Order saved = orderRepository.save(order);
+        return toOrderResponse(saved);
+    }
+
+    public AdminRevenueSummaryResponse getRevenueSummary(Integer months, LocalDate fromDate, LocalDate toDate) {
+        DateFilterWindow dateFilterWindow = resolveDateFilterWindow(months, fromDate, toDate);
+        int normalizedMonths = dateFilterWindow.months;
+        YearMonth startMonth = dateFilterWindow.startMonth;
+        YearMonth endMonth = dateFilterWindow.endMonth;
+        LocalDate startDate = dateFilterWindow.startDate;
+        LocalDate endDate = dateFilterWindow.endDate;
+
+        Map<YearMonth, RevenueBucket> monthlyRevenueMap = new LinkedHashMap<>();
+        YearMonth cursor = startMonth;
+        while (!cursor.isAfter(endMonth)) {
+            monthlyRevenueMap.put(cursor, new RevenueBucket());
+            cursor = cursor.plusMonths(1);
+        }
+
+        Map<Integer, CustomerRevenueBucket> customerRevenueMap = new HashMap<>();
+
+        for (Order order : orderRepository.findAllByOrderByOrderDateDesc()) {
+            if (order.getOrderDate() == null || order.getStatus() != Order.OrderStatus.completed) {
+                continue;
+            }
+
+            LocalDate orderDay = order.getOrderDate().toLocalDate();
+            if (orderDay.isBefore(startDate) || orderDay.isAfter(endDate)) {
+                continue;
+            }
+
+            YearMonth period = YearMonth.from(order.getOrderDate());
+            RevenueBucket monthlyBucket = monthlyRevenueMap.get(period);
+            if (monthlyBucket == null) {
+                continue;
+            }
+
+            BigDecimal safeTotal = order.getTotalPrice() == null ? BigDecimal.ZERO : order.getTotalPrice();
+            monthlyBucket.revenue = monthlyBucket.revenue.add(safeTotal);
+            monthlyBucket.orderCount += 1;
+
+            Integer accountId = order.getAccount() != null ? order.getAccount().getId() : null;
+            String username = order.getAccount() != null ? order.getAccount().getUsername() : "Khach le";
+            Integer customerKey = accountId != null ? accountId : -1;
+            CustomerRevenueBucket customerBucket = customerRevenueMap.computeIfAbsent(
+                    customerKey,
+                    unused -> new CustomerRevenueBucket(accountId, username)
+            );
+            customerBucket.revenue = customerBucket.revenue.add(safeTotal);
+            customerBucket.orderCount += 1;
+        }
+
+        BigDecimal totalRevenue = BigDecimal.ZERO;
+        int totalOrders = 0;
+        List<AdminRevenuePointResponse> points = new ArrayList<>();
+
+        for (Map.Entry<YearMonth, RevenueBucket> entry : monthlyRevenueMap.entrySet()) {
+            YearMonth period = entry.getKey();
+            RevenueBucket bucket = entry.getValue();
+
+            totalRevenue = totalRevenue.add(bucket.revenue);
+            totalOrders += bucket.orderCount;
+
+            points.add(new AdminRevenuePointResponse(
+                    period.atDay(1),
+                    formatPeriodLabel(period),
+                    bucket.revenue,
+                    bucket.orderCount
+            ));
+        }
+
+        BigDecimal averageRevenue = normalizedMonths == 0
+                ? BigDecimal.ZERO
+                : totalRevenue.divide(BigDecimal.valueOf(normalizedMonths), 2, RoundingMode.HALF_UP);
+
+        BigDecimal trendPercent = calculateTrendPercent(points);
+        BigDecimal totalRevenueSnapshot = totalRevenue;
+
+        List<AdminRevenueCustomerResponse> topCustomers = customerRevenueMap.values().stream()
+                .sorted(Comparator.comparing((CustomerRevenueBucket item) -> item.revenue).reversed()
+                        .thenComparing((CustomerRevenueBucket item) -> item.orderCount, Comparator.reverseOrder()))
+                .limit(10)
+                .map(item -> new AdminRevenueCustomerResponse(
+                        item.accountId,
+                        item.username,
+                        item.revenue,
+                        item.orderCount,
+                        toPercent(item.revenue, totalRevenueSnapshot)
+                ))
+                .toList();
+
+        return new AdminRevenueSummaryResponse(
+                normalizedMonths,
+                totalRevenue,
+                totalOrders,
+                averageRevenue,
+                trendPercent,
+                points,
+                topCustomers
+        );
+    }
+
+    private DateFilterWindow resolveDateFilterWindow(Integer months, LocalDate fromDate, LocalDate toDate) {
+        if (fromDate == null && toDate == null) {
+            int normalizedMonths = months == null ? 6 : Math.max(1, Math.min(months, 24));
+            YearMonth endMonth = YearMonth.now();
+            YearMonth startMonth = endMonth.minusMonths(normalizedMonths - 1L);
+            return new DateFilterWindow(
+                    normalizedMonths,
+                    startMonth,
+                    endMonth,
+                    startMonth.atDay(1),
+                    endMonth.atEndOfMonth()
+            );
+        }
+
+        if (fromDate == null || toDate == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Can nhap day du tu ngay va den ngay");
+        }
+        if (fromDate.isAfter(toDate)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tu ngay khong duoc lon hon den ngay");
+        }
+
+        YearMonth startMonth = YearMonth.from(fromDate);
+        YearMonth endMonth = YearMonth.from(toDate);
+        int monthSpan = (endMonth.getYear() - startMonth.getYear()) * 12
+                + (endMonth.getMonthValue() - startMonth.getMonthValue()) + 1;
+
+        if (monthSpan > 36) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Khoang thoi gian toi da la 36 thang");
+        }
+
+        return new DateFilterWindow(monthSpan, startMonth, endMonth, fromDate, toDate);
+    }
+
+    public AdminPageResponse<AdminUserResponse> getUsers(String keyword, String role, int page, int size) {
+        String normalizedKeyword = normalize(keyword);
+        String normalizedRole = normalize(role);
+
+        List<AdminUserResponse> items = accountRepository.findAll().stream()
+            .sorted(Comparator.comparing(Account::getCreatedAt, Comparator.nullsLast(Comparator.naturalOrder())).reversed())
+                .filter(account -> normalizedRole.isBlank() || normalize(account.getRole() != null ? account.getRole().name() : "").equals(normalizedRole))
+                .filter(account -> {
+                    if (normalizedKeyword.isBlank()) {
+                        return true;
+                    }
+                    return normalize(account.getUsername()).contains(normalizedKeyword)
+                            || normalize(account.getEmail()).contains(normalizedKeyword)
+                            || normalize(account.getPhone()).contains(normalizedKeyword);
+                })
+                .map(account -> new AdminUserResponse(
+                        account.getId(),
+                        account.getUsername(),
+                        account.getEmail(),
+                        account.getPhone(),
+                        account.getRole() != null ? account.getRole().name() : null,
+                        Boolean.TRUE.equals(account.getLocked()),
+                        account.getCreatedAt()
+                ))
+                .toList();
+
+        return paginate(items, page, size);
+    }
+
+    public AdminUserResponse updateUserRole(Integer userId, AdminUpdateUserRoleRequest request) {
+        if (request == null || request.getRole() == null || request.getRole().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Role la bat buoc");
+        }
+
+        Account account = findAccountOrThrow(userId);
+        String roleValue = request.getRole().trim().toLowerCase(Locale.ROOT);
+        if (!roleValue.equals("admin") && !roleValue.equals("user")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Role khong hop le");
+        }
+
+        account.setRole("admin".equals(roleValue) ? Account.Role.admin : Account.Role.user);
+        Account saved = accountRepository.save(account);
+        return toUserResponse(saved);
+    }
+
+    public AdminUserResponse updateUserLock(Integer userId, AdminUpdateUserLockRequest request) {
+        if (request == null || request.getLocked() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "locked la bat buoc");
+        }
+
+        Account account = findAccountOrThrow(userId);
+        account.setLocked(request.getLocked());
+        Account saved = accountRepository.save(account);
+        return toUserResponse(saved);
+    }
+
+    public AdminPageResponse<AdminReviewResponse> getReviews(Integer productId, String keyword, int page, int size) {
+        String normalizedKeyword = normalize(keyword);
+
+        List<AdminReviewResponse> items = reviewRepository.findAll().stream()
+            .sorted(Comparator.comparing(Review::getCreatedAt, Comparator.nullsLast(Comparator.naturalOrder())).reversed())
+                .filter(review -> productId == null || (review.getProduct() != null && Objects.equals(review.getProduct().getId(), productId)))
+                .filter(review -> {
+                    if (normalizedKeyword.isBlank()) {
+                        return true;
+                    }
+                    return normalize(review.getComment()).contains(normalizedKeyword)
+                            || normalize(review.getProduct() != null ? review.getProduct().getName() : "").contains(normalizedKeyword)
+                            || normalize(review.getAccount() != null ? review.getAccount().getUsername() : "").contains(normalizedKeyword);
+                })
+                .map(this::toReviewResponse)
+                .toList();
+
+        return paginate(items, page, size);
+    }
+
+    public void deleteReview(Integer reviewId) {
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Khong tim thay review"));
+        reviewRepository.delete(review);
+    }
+
+    private void syncProductImages(Product product, List<AdminProductImageRequest> imageRequests) {
+        List<AdminProductImageRequest> safeImages = imageRequests == null ? List.of() : imageRequests.stream()
+                .filter(item -> item.getImageUrl() != null && !item.getImageUrl().isBlank())
+                .toList();
+
+        productImageRepository.deleteByProduct_Id(product.getId());
+
+        for (AdminProductImageRequest item : safeImages) {
+            productImageRepository.save(ProductImage.builder()
+                    .product(product)
+                    .imageUrl(item.getImageUrl().trim())
+                .isMain(false)
+                    .build());
+        }
+    }
+
+    private void syncProductSizes(Product product, List<AdminProductSizeRequest> sizeRequests) {
+        List<AdminProductSizeRequest> safeSizes = sizeRequests == null ? List.of() : sizeRequests.stream()
+                .filter(item -> item.getSizeId() != null)
+                .toList();
+
+        List<ProductSize> existingItems = productSizeRepository.findByProduct_Id(product.getId());
+        Map<Integer, ProductSize> existingBySizeId = new HashMap<>();
+        for (ProductSize existingItem : existingItems) {
+            if (existingItem.getSize() != null && existingItem.getSize().getId() != null) {
+                existingBySizeId.put(existingItem.getSize().getId(), existingItem);
+            }
+        }
+
+        Set<Integer> incomingSizeIds = new HashSet<>();
+        for (AdminProductSizeRequest item : safeSizes) {
+            Integer sizeId = item.getSizeId();
+            incomingSizeIds.add(sizeId);
+
+            ProductSize target = existingBySizeId.get(sizeId);
+            if (target == null) {
+                Size size = sizeRepository.findById(sizeId)
+                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Size khong ton tai: " + sizeId));
+                target = ProductSize.builder()
+                        .product(product)
+                        .size(size)
+                        .build();
+            }
+
+            int quantity = item.getQuantity() == null ? 0 : Math.max(item.getQuantity(), 0);
+            target.setQuantity(quantity);
+            productSizeRepository.save(target);
+        }
+
+        for (ProductSize existingItem : existingItems) {
+            Integer existingSizeId = existingItem.getSize() != null ? existingItem.getSize().getId() : null;
+            if (existingSizeId != null && !incomingSizeIds.contains(existingSizeId)) {
+                productSizeRepository.delete(existingItem);
+            }
+        }
+    }
+
+    private AdminProductResponse toProductResponse(Product product) {
+        List<AdminProductImageResponse> images = product.getProductImages() == null ? List.of() : product.getProductImages().stream()
+                .sorted(Comparator.comparing(ProductImage::getId))
+                .map(item -> new AdminProductImageResponse(item.getId(), item.getImageUrl(), item.getIsMain()))
+                .toList();
+
+        List<AdminProductSizeResponse> sizes = product.getProductSizes() == null ? List.of() : product.getProductSizes().stream()
+                .sorted(Comparator.comparing(ProductSize::getId))
+                .map(item -> new AdminProductSizeResponse(
+                        item.getId(),
+                        item.getSize() != null ? item.getSize().getId() : null,
+                        item.getSize() != null ? item.getSize().getSizeName() : null,
+                        item.getQuantity()
+                ))
+                .toList();
+
+        return new AdminProductResponse(
+                product.getId(),
+                product.getName(),
+                product.getPrice(),
+                product.getDescription(),
+                product.getImage(),
+                product.getCategory() != null ? product.getCategory().getId() : null,
+                product.getCategory() != null ? product.getCategory().getName() : null,
+                product.getCreatedAt(),
+                images,
+                sizes
+        );
+    }
+
+    private AdminOrderResponse toOrderResponse(Order order) {
+        return new AdminOrderResponse(
+                order.getId(),
+                order.getAccount() != null ? order.getAccount().getId() : null,
+                order.getAccount() != null ? order.getAccount().getUsername() : null,
+                order.getTotalPrice(),
+                order.getStatus() != null ? order.getStatus().name() : null,
+                order.getAddress(),
+                order.getPhone(),
+                order.getOrderDate()
+        );
+    }
+
+    private String resolveProductImage(Product product) {
+        if (product.getImage() != null && !product.getImage().isBlank()) {
+            return product.getImage();
+        }
+
+        Optional<ProductImage> mainImage = productImageRepository.findByProduct_IdAndIsMainTrue(product.getId());
+        if (mainImage.isPresent() && mainImage.get().getImageUrl() != null) {
+            return mainImage.get().getImageUrl();
+        }
+
+        return productImageRepository.findByProduct_Id(product.getId())
+                .stream()
+                .map(ProductImage::getImageUrl)
+                .filter(url -> url != null && !url.isBlank())
+                .findFirst()
+                .orElse("");
+    }
+
+    private AdminUserResponse toUserResponse(Account account) {
+        return new AdminUserResponse(
+                account.getId(),
+                account.getUsername(),
+                account.getEmail(),
+                account.getPhone(),
+                account.getRole() != null ? account.getRole().name() : null,
+                Boolean.TRUE.equals(account.getLocked()),
+                account.getCreatedAt()
+        );
+    }
+
+    private AdminReviewResponse toReviewResponse(Review review) {
+        List<AdminReviewMediaResponse> media = review.getReviewMediaList() == null ? List.of() : review.getReviewMediaList().stream()
+                .sorted(Comparator.comparing(ReviewMedia::getId))
+                .map(item -> new AdminReviewMediaResponse(
+                        item.getId(),
+                        item.getMediaType() != null ? item.getMediaType().name() : null,
+                        item.getMediaUrl()
+                ))
+                .toList();
+
+        return new AdminReviewResponse(
+                review.getId(),
+                review.getProduct() != null ? review.getProduct().getId() : null,
+                review.getProduct() != null ? review.getProduct().getName() : null,
+                review.getAccount() != null ? review.getAccount().getId() : null,
+                review.getAccount() != null ? review.getAccount().getUsername() : null,
+                review.getRating(),
+                review.getComment(),
+                review.getCreatedAt(),
+                media
+        );
+    }
+
+    private Account findAccountOrThrow(Integer accountId) {
+        return accountRepository.findById(accountId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Khong tim thay tai khoan"));
+    }
+
+    private Category findCategoryOrThrow(Integer categoryId) {
+        return categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Khong tim thay danh muc"));
+    }
+
+    private void validateProductRequest(AdminProductRequest request) {
+        if (request == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Thong tin san pham la bat buoc");
+        }
+        if (request.getName() == null || request.getName().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ten san pham la bat buoc");
+        }
+        if (request.getPrice() == null || request.getPrice().compareTo(BigDecimal.ZERO) < 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Gia san pham khong hop le");
+        }
+        if (request.getCategoryId() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "categoryId la bat buoc");
+        }
+
+        if (request.getSizes() != null) {
+            Set<Integer> seenSizeIds = new HashSet<>();
+            for (AdminProductSizeRequest item : request.getSizes()) {
+                if (item == null || item.getSizeId() == null) {
+                    continue;
+                }
+                if (!seenSizeIds.add(item.getSizeId())) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Size bi trung lap trong danh sach ton kho");
+                }
+            }
+        }
+    }
+
+    private void validateCategoryRequest(AdminCategoryRequest request) {
+        if (request == null || request.getName() == null || request.getName().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ten danh muc la bat buoc");
+        }
+    }
+
+    private Order.OrderStatus parseOrderStatus(String statusText) {
+        String normalized = statusText.trim().toLowerCase(Locale.ROOT);
+        return switch (normalized) {
+            case "pending" -> Order.OrderStatus.pending;
+            case "confirmed" -> Order.OrderStatus.confirmed;
+            case "processing" -> Order.OrderStatus.processing;
+            case "shipping" -> Order.OrderStatus.shipping;
+            case "completed" -> Order.OrderStatus.completed;
+            case "cancelled" -> Order.OrderStatus.cancelled;
+            default -> throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Trang thai don hang khong hop le");
+        };
+    }
+
+    private String normalize(String value) {
+        return value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private String formatPeriodLabel(YearMonth period) {
+        int month = period.getMonthValue();
+        int year = period.getYear();
+        return (month < 10 ? "0" : "") + month + "/" + year;
+    }
+
+    private BigDecimal calculateTrendPercent(List<AdminRevenuePointResponse> points) {
+        if (points.isEmpty()) {
+            return BigDecimal.ZERO;
+        }
+
+        int half = points.size() / 2;
+        if (half == 0) {
+            return BigDecimal.ZERO;
+        }
+
+        BigDecimal firstHalf = points.subList(0, half).stream()
+                .map(AdminRevenuePointResponse::getRevenue)
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal secondHalf = points.subList(half, points.size()).stream()
+                .map(AdminRevenuePointResponse::getRevenue)
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        if (firstHalf.compareTo(BigDecimal.ZERO) == 0) {
+            return secondHalf.compareTo(BigDecimal.ZERO) == 0
+                    ? BigDecimal.ZERO
+                    : new BigDecimal("100.00");
+        }
+
+        return secondHalf.subtract(firstHalf)
+                .multiply(new BigDecimal("100"))
+                .divide(firstHalf, 2, RoundingMode.HALF_UP);
+    }
+
+    private BigDecimal toPercent(BigDecimal part, BigDecimal total) {
+        if (part == null || total == null || total.compareTo(BigDecimal.ZERO) == 0) {
+            return BigDecimal.ZERO;
+        }
+        return part.multiply(new BigDecimal("100")).divide(total, 2, RoundingMode.HALF_UP);
+    }
+
+    private static class RevenueBucket {
+        private BigDecimal revenue = BigDecimal.ZERO;
+        private int orderCount = 0;
+    }
+
+    private static class CustomerRevenueBucket {
+        private final Integer accountId;
+        private final String username;
+        private BigDecimal revenue = BigDecimal.ZERO;
+        private int orderCount = 0;
+
+        private CustomerRevenueBucket(Integer accountId, String username) {
+            this.accountId = accountId;
+            this.username = username;
+        }
+    }
+
+    private static class DateFilterWindow {
+        private final int months;
+        private final YearMonth startMonth;
+        private final YearMonth endMonth;
+        private final LocalDate startDate;
+        private final LocalDate endDate;
+
+        private DateFilterWindow(int months, YearMonth startMonth, YearMonth endMonth, LocalDate startDate, LocalDate endDate) {
+            this.months = months;
+            this.startMonth = startMonth;
+            this.endMonth = endMonth;
+            this.startDate = startDate;
+            this.endDate = endDate;
+        }
+    }
+
+    private <T> AdminPageResponse<T> paginate(List<T> source, int page, int size) {
+        int validPage = Math.max(page, 0);
+        int validSize = Math.max(size, 1);
+
+        int fromIndex = validPage * validSize;
+        if (fromIndex >= source.size()) {
+            return new AdminPageResponse<>(List.of(), source.size(), validPage, validSize, (int) Math.ceil(source.size() / (double) validSize));
+        }
+        int toIndex = Math.min(fromIndex + validSize, source.size());
+
+        List<T> items = new ArrayList<>(source.subList(fromIndex, toIndex));
+        int totalPages = (int) Math.ceil(source.size() / (double) validSize);
+        return new AdminPageResponse<>(items, source.size(), validPage, validSize, totalPages);
+    }
+}

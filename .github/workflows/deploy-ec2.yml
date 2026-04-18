@@ -1,0 +1,95 @@
+name: Build and Deploy to EC2
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    env:
+      IMAGE_TAG: ${{ github.sha }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push backend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./Backend_J2EE
+          file: ./Backend_J2EE/Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/j2ee-backend:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/j2ee-backend:${{ env.IMAGE_TAG }}
+
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./Frontend_React
+          file: ./Frontend_React/Dockerfile
+          push: true
+          build-args: |
+            VITE_API_BASE_URL=/api
+            VITE_WS_URL=/ws-chat
+            VITE_GOOGLE_CLIENT_ID=${{ secrets.VITE_GOOGLE_CLIENT_ID }}
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/j2ee-frontend:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/j2ee-frontend:${{ env.IMAGE_TAG }}
+
+      - name: Copy compose file to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: ${{ secrets.EC2_PORT || 22 }}
+          source: docker-compose.ec2.yml
+          target: /opt/j2ee
+
+      - name: Deploy on EC2
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+          IMAGE_TAG: ${{ env.IMAGE_TAG }}
+          EC2_ENV_FILE: ${{ secrets.EC2_ENV_FILE }}
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: ${{ secrets.EC2_PORT || 22 }}
+          envs: DOCKERHUB_USERNAME,DOCKERHUB_TOKEN,IMAGE_TAG,EC2_ENV_FILE
+          script: |
+            set -e
+            sudo mkdir -p /opt/j2ee
+            sudo chown -R $USER:$USER /opt/j2ee
+
+            cd /opt/j2ee
+            mv docker-compose.ec2.yml docker-compose.yml
+
+            printf '%s\n' "$EC2_ENV_FILE" > .env
+
+            echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+
+            export DOCKERHUB_USERNAME="$DOCKERHUB_USERNAME"
+            export IMAGE_TAG="$IMAGE_TAG"
+
+            docker compose pull
+            docker compose up -d --remove-orphans
+            docker image prune -f

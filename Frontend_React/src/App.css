@@ -1,0 +1,371 @@
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap');
+
+:root {
+  --bg: #f7f3ea;
+  --surface: #ffffff;
+  --line: #ddd5c7;
+  --text: #2d2922;
+  --muted: #72695d;
+  --brand: #115e59;
+  --brand-strong: #0b4642;
+  --accent: #d06e2f;
+  --star: #f2aa2a;
+  --shadow: 0 22px 44px rgba(34, 28, 18, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(208, 110, 47, 0.18), transparent 28%),
+    radial-gradient(circle at 90% 2%, rgba(17, 94, 89, 0.2), transparent 36%),
+    radial-gradient(circle at 50% 100%, rgba(173, 134, 57, 0.12), transparent 42%),
+    var(--bg);
+  color: var(--text);
+  font-family: 'Be Vietnam Pro', 'Segoe UI', sans-serif;
+  min-height: 100vh;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: 'Fraunces', Georgia, serif;
+}
+
+#root {
+  width: 100%;
+}
+
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.app-main {
+  flex: 1;
+}
+
+.page {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 32px 16px 40px;
+  display: grid;
+  gap: 18px;
+  animation: page-enter 0.45s ease;
+}
+
+.card {
+  background: linear-gradient(155deg, rgba(255, 255, 255, 0.96), rgba(255, 252, 246, 0.88));
+  border: 1px solid rgba(130, 112, 88, 0.2);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  padding: 22px;
+}
+
+.card h1,
+.card h2 {
+  margin-top: 0;
+}
+
+.todo-card {
+  background: #efefef;
+}
+
+.todo-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.progress-text {
+  margin: 6px 0;
+  color: var(--muted);
+}
+
+.progress-track {
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background: #dedede;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--brand), #67a88f);
+}
+
+.todo-list {
+  list-style: none;
+  padding: 0;
+  margin: 18px 0 0;
+  display: grid;
+  gap: 14px;
+}
+
+.todo-list li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 1.12rem;
+}
+
+.todo-list input {
+  width: 24px;
+  height: 24px;
+  accent-color: var(--brand);
+}
+
+.form-grid {
+  display: grid;
+  gap: 14px;
+}
+
+label,
+.stars-field,
+.media-title {
+  display: grid;
+  gap: 8px;
+  font-weight: 600;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 1rem;
+  background: #fff;
+  color: var(--text);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: 2px solid rgba(47, 122, 95, 0.25);
+  border-color: var(--brand);
+}
+
+.stars-field {
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.stars-field legend {
+  padding: 0 6px;
+  color: var(--muted);
+}
+
+.stars {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.star {
+  border: none;
+  background: transparent;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #bab4ae;
+}
+
+.star.active {
+  color: var(--star);
+}
+
+.star-value {
+  margin-left: 8px;
+  color: var(--muted);
+}
+
+.media-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.order-item-row {
+  grid-template-columns: minmax(220px, 1fr) 90px auto;
+}
+
+.image-preview-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.image-preview-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.image-preview-item img {
+  width: 90px;
+  height: 90px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+}
+
+.file-label {
+  display: inline-block;
+  cursor: pointer;
+}
+
+.primary-button,
+.outline-button,
+.subtle-button {
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 1rem;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.primary-button {
+  background: linear-gradient(135deg, var(--brand), #1d7f75);
+  color: #fff;
+  font-weight: 700;
+  box-shadow: 0 10px 18px rgba(17, 94, 89, 0.26);
+}
+
+.primary-button:hover {
+  background: linear-gradient(135deg, var(--brand-strong), #166860);
+  transform: translateY(-1px);
+}
+
+.outline-button {
+  border: 1px solid rgba(17, 94, 89, 0.65);
+  color: var(--brand);
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.subtle-button {
+  background: #ece6da;
+  color: #473f34;
+}
+
+.status {
+  margin: 12px 0 0;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.review-list {
+  display: grid;
+  gap: 14px;
+}
+
+.review-item {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px;
+  background: #fffdf8;
+}
+
+.review-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.stars-text {
+  color: var(--star);
+  letter-spacing: 2px;
+}
+
+.media-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+}
+
+.media-grid img,
+.media-grid video {
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+}
+
+.order-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1.4fr);
+  gap: 18px;
+  align-items: flex-start;
+}
+
+.order-main {
+  display: grid;
+  gap: 14px;
+}
+
+.order-summary {
+  display: grid;
+  gap: 10px;
+}
+
+.order-summary-box {
+  margin-top: 10px;
+  padding: 12px;
+  border-radius: 12px;
+  background: #f9f3e8;
+  border: 1px dashed var(--line);
+}
+
+.address-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 700px) {
+  .page {
+    padding: 20px 12px 30px;
+  }
+
+  .review-top {
+    gap: 8px;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .media-row {
+    grid-template-columns: 1fr;
+  }
+
+  .order-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .address-grid {
+    grid-template-columns: 1fr;
+  }
+}

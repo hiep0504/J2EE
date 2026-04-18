@@ -1,0 +1,129 @@
+.admin-shell {
+  --admin-bg: #f4f7fb;
+  --admin-surface: #ffffff;
+  --admin-line: #d9e2ef;
+  --admin-title: #0f2848;
+  --admin-muted: #6d8098;
+  --admin-primary: #0d6b6f;
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  min-height: calc(100vh - 80px);
+  background: var(--admin-bg);
+}
+
+.admin-sidebar {
+  background: #0f1f35;
+  color: #d4e1f4;
+  padding: 22px 14px;
+  position: sticky;
+  top: 78px;
+  height: calc(100vh - 78px);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.admin-brand {
+  color: #ffffff;
+  text-decoration: none;
+  font-weight: 800;
+  font-size: 1.05rem;
+  display: block;
+  margin-bottom: 20px;
+  padding: 0 10px;
+}
+
+.admin-nav {
+  display: grid;
+  gap: 6px;
+}
+
+.admin-nav__item {
+  color: #bcd0e8;
+  text-decoration: none;
+  padding: 10px;
+  border-radius: 10px;
+  font-weight: 500;
+}
+
+.admin-nav__item:hover,
+.admin-nav__item.active {
+  background: rgba(13, 107, 111, 0.25);
+  color: #f2fbff;
+}
+
+.admin-main {
+  min-width: 0;
+  padding: 18px;
+}
+
+.admin-topbar {
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-line);
+  border-radius: 14px;
+  padding: 14px 16px;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.admin-topbar h1 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: var(--admin-title);
+}
+
+.admin-topbar p {
+  margin: 2px 0 0;
+  color: var(--admin-muted);
+  font-size: 0.92rem;
+}
+
+.admin-user-chip {
+  text-align: right;
+  color: var(--admin-title);
+}
+
+.admin-user-chip span,
+.admin-user-chip strong {
+  display: block;
+}
+
+.admin-content {
+  min-width: 0;
+}
+
+@media (max-width: 992px) {
+  .admin-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-sidebar {
+    position: static;
+    height: auto;
+    border-right: none;
+  }
+
+  .admin-nav {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .admin-main {
+    padding: 12px;
+  }
+
+  .admin-topbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .admin-user-chip {
+    text-align: left;
+  }
+
+  .admin-nav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
